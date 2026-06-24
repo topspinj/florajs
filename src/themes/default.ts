@@ -1,21 +1,43 @@
 import type { FloraTheme } from "../types.js";
 
 export const defaultTheme: FloraTheme = {
-  background: "#ffffff",
+  background: "#FFFFFF",
   nodeColors: {
-    fill: "#f0f4ff",
-    stroke: "#4f6df5",
-    text: "#1e293b",
+    fill: "#F7F8FE",
+    fillGradientEnd: "#EDF0FD",
+    stroke: "#0D32B2",
+    text: "#0A0F25",
+  },
+  shapeColors: {
+    diamond: {
+      fill: "#FFF8F0",
+      fillGradientEnd: "#FFEFD9",
+      stroke: "#C77A20",
+      text: "#0A0F25",
+    },
+    stadium: {
+      fill: "#F0FAF6",
+      fillGradientEnd: "#DFFAEE",
+      stroke: "#1A7F5A",
+      text: "#0A0F25",
+    },
+    rounded: {
+      fill: "#F5F0FF",
+      fillGradientEnd: "#EBE0FF",
+      stroke: "#6B3FA0",
+      text: "#0A0F25",
+    },
   },
   edgeColors: {
-    stroke: "#94a3b8",
-    label: "#64748b",
+    stroke: "#0D32B2",
+    label: "#676C7E",
+    labelBackground: "#F7F8FE",
   },
   fontFamily:
-    'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  fontSize: 14,
-  nodeRadius: 8,
-  nodePadding: { x: 20, y: 12 },
-  edgeWidth: 1.5,
-  shadow: true,
+    '"Source Sans Pro", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  fontSize: 16,
+  nodeRadius: 4,
+  nodePadding: { x: 28, y: 16 },
+  edgeWidth: 2,
+  shadow: false,
 };

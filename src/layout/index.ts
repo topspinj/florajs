@@ -3,7 +3,7 @@ import type { FlowchartAST, LayoutResult, FloraTheme } from "../types.js";
 import { defaultTheme } from "../themes/default.js";
 
 function estimateTextWidth(text: string, fontSize: number): number {
-  return text.length * fontSize * 0.6;
+  return text.length * fontSize * 0.62;
 }
 
 export function computeLayout(
@@ -14,23 +14,35 @@ export function computeLayout(
 
   g.setGraph({
     rankdir: ast.direction === "LR" || ast.direction === "RL" ? "LR" : "TB",
-    nodesep: 50,
-    ranksep: 60,
-    marginx: 20,
-    marginy: 20,
+    nodesep: 60,
+    ranksep: 80,
+    marginx: 40,
+    marginy: 40,
+    edgesep: 20,
   });
 
   g.setDefaultEdgeLabel(() => ({}));
 
   for (const node of ast.nodes) {
     const textWidth = estimateTextWidth(node.label, theme.fontSize);
-    const width = Math.max(textWidth + theme.nodePadding.x * 2, 80);
-    const height = theme.fontSize + theme.nodePadding.y * 2 + 8;
+    let width = Math.max(textWidth + theme.nodePadding.x * 2, 100);
+    let height = theme.fontSize + theme.nodePadding.y * 2 + 12;
+
+    if (node.shape === "diamond") {
+      width = Math.max(width * 1.6, 120);
+      height = Math.max(height * 1.6, 80);
+    } else if (node.shape === "stadium") {
+      width = Math.max(width, 120);
+    }
+
     g.setNode(node.id, { label: node.label, width, height });
   }
 
   for (const edge of ast.edges) {
-    g.setEdge(edge.from, edge.to, { label: edge.label ?? "" });
+    g.setEdge(edge.from, edge.to, {
+      label: edge.label ?? "",
+      minlen: edge.label ? 2 : 1,
+    });
   }
 
   dagre.layout(g);

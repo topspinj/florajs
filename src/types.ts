@@ -58,16 +58,25 @@ export interface LayoutResult {
   height: number;
 }
 
+export interface NodeColorSet {
+  fill: string;
+  fillGradientEnd: string;
+  stroke: string;
+  text: string;
+}
+
 export interface FloraTheme {
   background: string;
-  nodeColors: {
-    fill: string;
-    stroke: string;
-    text: string;
+  nodeColors: NodeColorSet;
+  shapeColors: {
+    diamond: NodeColorSet;
+    stadium: NodeColorSet;
+    rounded: NodeColorSet;
   };
   edgeColors: {
     stroke: string;
     label: string;
+    labelBackground: string;
   };
   fontFamily: string;
   fontSize: number;
