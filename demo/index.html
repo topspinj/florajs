@@ -78,6 +78,20 @@
 
     button:hover { background: #3b5de7; }
 
+    select {
+      padding: 6px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #1e293b;
+      background: white;
+      cursor: pointer;
+      outline: none;
+    }
+
+    select:focus { border-color: #4f6df5; }
+
     textarea {
       flex: 1;
       padding: 16px;
@@ -156,17 +170,31 @@
         <label>Input</label>
         <button id="render-btn">Render</button>
       </div>
-      <textarea id="input" spellcheck="false">flowchart LR
-  A[Start] --> B{Decision}
-  B -->|Yes| C[Do thing]
-  B -->|No| D[Other thing]
-  C --> E([Done])
-  D --> E</textarea>
+      <textarea id="input" spellcheck="false">flowchart TD
+  subgraph Frontend
+    UI[User Interface] --> API[API Client]
+  end
+  subgraph Backend
+    Server[Express Server] --> Auth[Auth Service]
+    Server --> DB[(Database)]
+    subgraph Workers
+      Queue[Job Queue] --> Worker1[Worker]
+      Queue --> Worker2[Worker 2]
+    end
+    Server --> Queue
+  end
+  API --> Server
+  UI --> CDN([CDN])</textarea>
     </div>
 
     <div class="preview-pane">
       <div class="toolbar">
         <label>Preview</label>
+        <select id="theme-select">
+          <option value="default">Default</option>
+          <option value="tufte">Tufte</option>
+          <option value="digital">Digital</option>
+        </select>
         <span id="node-info"></span>
       </div>
       <div id="output"></div>
@@ -180,11 +208,13 @@
     const output = document.getElementById("output");
     const renderBtn = document.getElementById("render-btn");
     const nodeInfo = document.getElementById("node-info");
+    const themeSelect = document.getElementById("theme-select");
 
     function renderDiagram() {
       try {
         output.innerHTML = "";
         const { warnings } = render(input.value, output, {
+          theme: themeSelect.value,
           interactive: true,
           onNodeHover: (id) => {
             nodeInfo.textContent = id ? `Node: ${id}` : "";
@@ -206,6 +236,7 @@
     }
 
     renderBtn.addEventListener("click", renderDiagram);
+    themeSelect.addEventListener("change", renderDiagram);
 
     input.addEventListener("keydown", (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {

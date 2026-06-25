@@ -40,4 +40,9 @@ export const defaultTheme: FloraTheme = {
   nodePadding: { x: 28, y: 16 },
   edgeWidth: 2,
   shadow: false,
+  subgraphColors: {
+    fill: "rgba(79, 109, 245, 0.06)",
+    stroke: "rgba(79, 109, 245, 0.3)",
+    label: "#4f6df5",
+  },
 };
