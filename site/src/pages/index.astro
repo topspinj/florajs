@@ -1,0 +1,535 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Flora — The diagram library built for AI">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <p class="hero-badge">Open Source</p>
+      <h1>The diagram library<br />built for AI</h1>
+      <p class="hero-sub">
+        Mermaid-compatible syntax. Fault-tolerant parsing. Beautiful, interactive SVGs.
+        <br />Flora renders what other libraries can't &mdash; because LLMs don't write perfect syntax.
+      </p>
+      <div class="hero-actions">
+        <a href="#get-started" class="btn btn-primary">Get Started</a>
+        <a href="https://github.com/topspinj/florajs" class="btn btn-secondary">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Example -->
+  <section class="code-hero">
+    <div class="container">
+      <div class="code-split">
+        <div class="code-block">
+          <div class="code-header">Input</div>
+          <pre><code>import &#123; render &#125; from "florajs";
+
+const &#123; warnings &#125; = render(
+  `flowchart LR
+    A[Start] --> B&#123;Decision&#125;
+    B -->|Yes| C[Do thing]
+    B -->|No| D[Other thing]`,
+  document.getElementById("diagram")
+);
+
+// warnings: [] — clean parse
+// But even broken input renders gracefully</code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header">Fault-tolerant</div>
+          <pre><code>// LLM generates broken syntax? No problem.
+const &#123; warnings &#125; = render(
+  `flowchart LR
+    A[Start] --> B&#123;Decision&#125;
+    B -->|Yes| C[Do thing
+    B -->
+    D[End] --> E[Final]`,
+  el
+);
+
+// warnings: [
+//   &#123; line: 4, message: "Unterminated [...]" &#125;,
+//   &#123; line: 5, message: "Dangling arrow..." &#125;
+// ]
+// Renders A, B, D, E — skips broken lines</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="features">
+    <div class="container">
+      <h2>Why Flora</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>Fault-Tolerant Parsing</h3>
+          <p>
+            LLMs generate broken Mermaid syntax constantly. Flora never throws &mdash; it renders what it can
+            and returns structured warnings for what it couldn't parse.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>Mermaid-Compatible</h3>
+          <p>
+            Drop-in replacement for Mermaid's flowchart syntax. Same <code>flowchart LR</code>,
+            same node shapes, same edge styles. No new syntax to learn.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>Interactive by Default</h3>
+          <p>
+            Hover highlights, click handlers, and zoom/pan built in.
+            No extra configuration &mdash; diagrams are interactive out of the box.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>Beautiful Defaults</h3>
+          <p>
+            Subtle gradients, soft shadows, rounded edges, and proper typography.
+            Diagrams look polished without any theme customization.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>Tiny Footprint</h3>
+          <p>
+            One dependency (dagre for layout). No heavyweight rendering framework.
+            Ships as ESM and CJS with full TypeScript types.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>Structured Output</h3>
+          <p>
+            Every API returns warnings alongside results. Build feedback loops
+            where your AI agent can read warnings and self-correct.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section id="comparison" class="comparison">
+    <div class="container">
+      <h2>Flora vs. Mermaid vs. D2</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Flora</th>
+              <th>Mermaid</th>
+              <th>D2</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Fault-tolerant parsing</td>
+              <td class="yes">Yes</td>
+              <td class="no">No — throws on any error</td>
+              <td class="no">No — compiler errors</td>
+            </tr>
+            <tr>
+              <td>Structured warnings</td>
+              <td class="yes">Yes — line, col, message</td>
+              <td class="no">No</td>
+              <td class="partial">Partial</td>
+            </tr>
+            <tr>
+              <td>Interactive (hover/click/zoom)</td>
+              <td class="yes">Built-in</td>
+              <td class="partial">Click only, requires config</td>
+              <td class="no">No — static SVG</td>
+            </tr>
+            <tr>
+              <td>Runs in the browser</td>
+              <td class="yes">Yes</td>
+              <td class="yes">Yes</td>
+              <td class="no">No — requires Go binary</td>
+            </tr>
+            <tr>
+              <td>Mermaid syntax compatible</td>
+              <td class="yes">Yes</td>
+              <td class="yes">Yes (native)</td>
+              <td class="no">No — own syntax</td>
+            </tr>
+            <tr>
+              <td>Visual quality</td>
+              <td class="yes">Gradients, shadows, typography</td>
+              <td class="partial">Basic flat style</td>
+              <td class="yes">Excellent</td>
+            </tr>
+            <tr>
+              <td>Bundle size</td>
+              <td class="yes">Small (dagre only)</td>
+              <td class="no">~500KB+</td>
+              <td class="partial">N/A (server-side)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Get Started -->
+  <section id="get-started" class="get-started">
+    <div class="container">
+      <h2>Get Started</h2>
+      <pre><code>npm install florajs</code></pre>
+      <div class="api-grid">
+        <div class="api-card">
+          <h3><code>render(input, element, options?)</code></h3>
+          <p>Parse and render a diagram into a DOM element. Returns <code>&#123; warnings &#125;</code>.</p>
+        </div>
+        <div class="api-card">
+          <h3><code>toAST(input)</code></h3>
+          <p>Parse input and return the AST and warnings without rendering.</p>
+        </div>
+        <div class="api-card">
+          <h3><code>toSVGElement(input, options?)</code></h3>
+          <p>Returns an SVG element and warnings without attaching to the DOM.</p>
+        </div>
+        <div class="api-card">
+          <h3><code>toLayout(input)</code></h3>
+          <p>Parse input and return computed node/edge positions and warnings.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roadmap -->
+  <section id="roadmap" class="roadmap">
+    <div class="container">
+      <h2>Roadmap</h2>
+      <div class="roadmap-grid">
+        <div class="roadmap-card shipped">
+          <span class="roadmap-badge badge-shipped">Shipped</span>
+          <h3>Flowcharts</h3>
+          <p>Full Mermaid-compatible flowchart syntax with 5 node shapes, 3 edge styles, subgraphs, and chain edges.</p>
+        </div>
+        <div class="roadmap-card shipped">
+          <span class="roadmap-badge badge-shipped">Shipped</span>
+          <h3>Fault-Tolerant Parsing</h3>
+          <p>Never throws. Recovers from unterminated brackets, dangling arrows, broken lines, and unknown diagram types.</p>
+        </div>
+        <div class="roadmap-card shipped">
+          <span class="roadmap-badge badge-shipped">Shipped</span>
+          <h3>Interactive SVGs</h3>
+          <p>Hover effects, click handlers, and zoom/pan. Beautiful default theme with gradients and shadows.</p>
+        </div>
+        <div class="roadmap-card next">
+          <span class="roadmap-badge badge-next">Next</span>
+          <h3>Programmatic Builder API</h3>
+          <p>Build diagrams from JS objects instead of text syntax. Ideal for AI tool-use where structured output is more reliable.</p>
+        </div>
+        <div class="roadmap-card next">
+          <span class="roadmap-badge badge-next">Next</span>
+          <h3>Streaming Rendering</h3>
+          <p>Progressive rendering as LLM tokens stream in. Nodes appear in real-time as the diagram is generated.</p>
+        </div>
+        <div class="roadmap-card future">
+          <span class="roadmap-badge badge-future">Future</span>
+          <h3>ERDs, Sequence Diagrams</h3>
+          <p>Expand beyond flowcharts. Entity-relationship diagrams, sequence diagrams, and more.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  /* Hero */
+  .hero {
+    padding: 80px 24px 48px;
+    text-align: center;
+  }
+
+  .container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-accent);
+    background: var(--color-accent-light);
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--color-text-secondary);
+    max-width: 640px;
+    margin: 0 auto 32px;
+    line-height: 1.6;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent-hover);
+    text-decoration: none;
+  }
+
+  .btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  /* Code Hero */
+  .code-hero {
+    padding: 0 24px 64px;
+  }
+
+  .code-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .code-block {
+    overflow: hidden;
+  }
+
+  .code-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  .code-block pre {
+    font-size: 13px;
+    height: 100%;
+  }
+
+  /* Features */
+  .features {
+    padding: 80px 24px;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .features h2,
+  .comparison h2,
+  .get-started h2,
+  .roadmap h2 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .feature-card {
+    padding: 28px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+  }
+
+  .feature-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .feature-card p {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Comparison */
+  .comparison {
+    padding: 80px 24px;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  th {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  th:first-child {
+    color: var(--color-text);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  td:first-child {
+    font-weight: 500;
+  }
+
+  .yes { color: var(--color-green); font-weight: 500; }
+  .no { color: var(--color-text-muted); }
+  .partial { color: var(--color-amber); font-weight: 500; }
+
+  /* Get Started */
+  .get-started {
+    padding: 80px 24px;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .get-started pre {
+    max-width: 480px;
+    margin: 0 auto 40px;
+    text-align: center;
+  }
+
+  .api-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .api-card {
+    padding: 24px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+  }
+
+  .api-card h3 {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .api-card p {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+  }
+
+  /* Roadmap */
+  .roadmap {
+    padding: 80px 24px;
+  }
+
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .roadmap-card {
+    padding: 28px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+  }
+
+  .roadmap-badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+
+  .badge-shipped {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .badge-next {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge-future {
+    background: var(--color-accent-light);
+    color: var(--color-accent);
+  }
+
+  .roadmap-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .roadmap-card p {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .code-split,
+    .feature-grid,
+    .roadmap-grid,
+    .api-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
