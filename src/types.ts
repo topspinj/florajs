@@ -92,3 +92,14 @@ export interface FloraOptions {
   onNodeClick?: (nodeId: string) => void;
   onNodeHover?: (nodeId: string | null) => void;
 }
+
+export interface ParseWarning {
+  line: number;
+  col: number;
+  message: string;
+}
+
+export interface ParseResult {
+  ast: DiagramAST;
+  warnings: ParseWarning[];
+}

@@ -1,3 +1,5 @@
+import type { ParseWarning } from "../types.js";
+
 export type TokenType =
   | "keyword"
   | "direction"
@@ -25,11 +27,17 @@ export interface Token {
   col: number;
 }
 
+export interface TokenizeResult {
+  tokens: Token[];
+  warnings: ParseWarning[];
+}
+
 const KEYWORDS = new Set(["flowchart", "graph", "subgraph", "end"]);
 const DIRECTIONS = new Set(["TB", "TD", "BT", "LR", "RL"]);
 
-export function tokenize(input: string): Token[] {
+export function tokenize(input: string): TokenizeResult {
   const tokens: Token[] = [];
+  const warnings: ParseWarning[] = [];
   let pos = 0;
   let line = 1;
   let col = 1;
@@ -79,11 +87,21 @@ export function tokenize(input: string): Token[] {
 
   function readQuotedString(): string {
     const quote = advance();
+    const startLine = line;
+    const startCol = col;
     let str = "";
-    while (pos < input.length && input[pos] !== quote) {
+    while (pos < input.length && input[pos] !== quote && input[pos] !== "\n") {
       str += advance();
     }
-    if (pos < input.length) advance();
+    if (pos < input.length && input[pos] === quote) {
+      advance();
+    } else {
+      warnings.push({
+        line: startLine,
+        col: startCol,
+        message: `Unterminated string (expected closing ${quote})`,
+      });
+    }
     return str;
   }
 
@@ -91,11 +109,29 @@ export function tokenize(input: string): Token[] {
     let text = "";
     let depth = 1;
     const open = input[pos - 1]!;
+    const startLine = line;
+    const startCol = col;
     while (pos < input.length && depth > 0) {
+      if (input[pos] === "\n") {
+        // Unterminated bracket on this line — stop and warn
+        warnings.push({
+          line: startLine,
+          col: startCol,
+          message: `Unterminated ${open}${close} (missing closing ${close})`,
+        });
+        break;
+      }
       if (input[pos] === open) depth++;
       if (input[pos] === close) depth--;
       if (depth > 0) text += advance();
       else advance();
+    }
+    if (pos >= input.length && depth > 0) {
+      warnings.push({
+        line: startLine,
+        col: startCol,
+        message: `Unterminated ${open}${close} (missing closing ${close})`,
+      });
     }
     return text;
   }
@@ -132,10 +168,20 @@ export function tokenize(input: string): Token[] {
     if (ch === "|") {
       advance();
       let text = "";
-      while (pos < input.length && input[pos] !== "|") {
+      const pipeStartLine = line;
+      const pipeStartCol = col;
+      while (pos < input.length && input[pos] !== "|" && input[pos] !== "\n") {
         text += advance();
       }
-      if (pos < input.length) advance();
+      if (pos < input.length && input[pos] === "|") {
+        advance();
+      } else {
+        warnings.push({
+          line: pipeStartLine,
+          col: pipeStartCol,
+          message: "Unterminated edge label (missing closing |)",
+        });
+      }
       tokens.push({ type: "pipe_text", value: text, line: startLine, col: startCol });
       continue;
     }
@@ -200,9 +246,15 @@ export function tokenize(input: string): Token[] {
       continue;
     }
 
-    advance();
+    // Unknown character — skip it and warn
+    const skipped = advance();
+    warnings.push({
+      line: startLine,
+      col: startCol,
+      message: `Unexpected character '${skipped}'`,
+    });
   }
 
   tokens.push({ type: "eof", value: "", line, col });
-  return tokens;
+  return { tokens, warnings };
 }

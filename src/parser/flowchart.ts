@@ -6,6 +6,7 @@ import type {
   FlowchartNode,
   FlowchartSubgraph,
   NodeShape,
+  ParseWarning,
 } from "../types.js";
 
 function inferShape(tokens: Token[], start: number): { shape: NodeShape; label: string } | null {
@@ -37,7 +38,7 @@ function arrowStyle(arrow: string): FlowchartEdge["style"] {
   return "solid";
 }
 
-export function parseFlowchart(tokens: Token[]): FlowchartAST {
+export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): FlowchartAST {
   const nodes = new Map<string, FlowchartNode>();
   const edges: FlowchartEdge[] = [];
   const subgraphs: FlowchartSubgraph[] = [];
@@ -55,6 +56,16 @@ export function parseFlowchart(tokens: Token[]): FlowchartAST {
   function ensureNode(id: string): void {
     if (!nodes.has(id)) {
       nodes.set(id, { id, label: id, shape: "rect" });
+    }
+  }
+
+  function skipToNextLine(): void {
+    while (
+      pos < tokens.length &&
+      tokens[pos]!.type !== "newline" &&
+      tokens[pos]!.type !== "eof"
+    ) {
+      pos++;
     }
   }
 
@@ -98,6 +109,8 @@ export function parseFlowchart(tokens: Token[]): FlowchartAST {
     skipNewlines();
     if (current().type === "eof") break;
 
+    const lineStartToken = current();
+
     if (current().type === "keyword" && current().value === "subgraph") {
       pos++;
       const id = current().value;
@@ -109,6 +122,14 @@ export function parseFlowchart(tokens: Token[]): FlowchartAST {
         pos < tokens.length &&
         !(current().type === "keyword" && current().value === "end")
       ) {
+        if (current().type === "eof") {
+          warnings.push({
+            line: lineStartToken.line,
+            col: lineStartToken.col,
+            message: `Unterminated subgraph '${id}' (missing 'end')`,
+          });
+          break;
+        }
         if (current().type === "identifier") {
           subgraphNodes.push(current().value);
         }
@@ -121,41 +142,77 @@ export function parseFlowchart(tokens: Token[]): FlowchartAST {
     }
 
     if (current().type === "identifier") {
-      let currentId = current().value;
+      const currentToken = current();
+      let currentId = currentToken.value;
       pos++;
-      parseNodeDefinition(currentId);
 
-      while (current().type === "arrow") {
-        const arrow = current().value;
-        const style = arrowStyle(arrow);
-        pos++;
+      try {
+        parseNodeDefinition(currentId);
 
-        let edgeLabel: string | undefined;
-        if (current().type === "pipe_text") {
-          edgeLabel = current().value;
+        while (current().type === "arrow") {
+          const arrow = current().value;
+          const style = arrowStyle(arrow);
           pos++;
+
+          let edgeLabel: string | undefined;
+          if (current().type === "pipe_text") {
+            edgeLabel = current().value;
+            pos++;
+          }
+
+          if (current().type === "identifier") {
+            const nextId = current().value;
+            pos++;
+            parseNodeDefinition(nextId);
+            ensureNode(currentId);
+            ensureNode(nextId);
+
+            edges.push({
+              from: currentId,
+              to: nextId,
+              label: edgeLabel,
+              style,
+            });
+
+            currentId = nextId;
+          } else if (current().type !== "newline" && current().type !== "eof") {
+            // Arrow followed by something unexpected — warn and skip rest of line
+            warnings.push({
+              line: current().line,
+              col: current().col,
+              message: `Expected node identifier after arrow, got '${current().value || current().type}'`,
+            });
+            skipToNextLine();
+            break;
+          } else {
+            // Arrow at end of line with no target — warn
+            warnings.push({
+              line: currentToken.line,
+              col: currentToken.col,
+              message: `Dangling arrow with no target node`,
+            });
+            break;
+          }
         }
-
-        if (current().type === "identifier") {
-          const nextId = current().value;
-          pos++;
-          parseNodeDefinition(nextId);
-          ensureNode(currentId);
-          ensureNode(nextId);
-
-          edges.push({
-            from: currentId,
-            to: nextId,
-            label: edgeLabel,
-            style,
-          });
-
-          currentId = nextId;
-        }
+      } catch {
+        // If anything goes wrong parsing this line, skip it and warn
+        warnings.push({
+          line: currentToken.line,
+          col: currentToken.col,
+          message: `Could not parse line starting with '${currentId}'`,
+        });
+        skipToNextLine();
       }
       continue;
     }
 
+    // Unexpected token — skip it and warn
+    const unexpected = current();
+    warnings.push({
+      line: unexpected.line,
+      col: unexpected.col,
+      message: `Unexpected ${unexpected.type}${unexpected.value ? ` '${unexpected.value}'` : ""}`,
+    });
     pos++;
   }
 

@@ -184,7 +184,7 @@
     function renderDiagram() {
       try {
         output.innerHTML = "";
-        render(input.value, output, {
+        const { warnings } = render(input.value, output, {
           interactive: true,
           onNodeHover: (id) => {
             nodeInfo.textContent = id ? `Node: ${id}` : "";
@@ -193,6 +193,13 @@
             nodeInfo.textContent = `Clicked: ${id}`;
           },
         });
+        if (warnings.length > 0) {
+          const warningEl = document.createElement("div");
+          warningEl.className = "error";
+          warningEl.style.color = "#d97706";
+          warningEl.textContent = warnings.map(w => `Line ${w.line}: ${w.message}`).join("\n");
+          output.appendChild(warningEl);
+        }
       } catch (err) {
         output.innerHTML = `<div class="error">${err.message}</div>`;
       }

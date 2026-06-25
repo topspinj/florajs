@@ -3,7 +3,7 @@ import { parse } from "../../src/parser/index.js";
 
 describe("flowchart parser", () => {
   it("parses a simple two-node flowchart", () => {
-    const ast = parse(`flowchart LR
+    const { ast, warnings } = parse(`flowchart LR
       A --> B`);
 
     expect(ast.type).toBe("flowchart");
@@ -13,10 +13,11 @@ describe("flowchart parser", () => {
     expect(ast.edges[0]!.from).toBe("A");
     expect(ast.edges[0]!.to).toBe("B");
     expect(ast.edges[0]!.style).toBe("solid");
+    expect(warnings).toHaveLength(0);
   });
 
   it("parses node labels in brackets", () => {
-    const ast = parse(`flowchart TD
+    const { ast } = parse(`flowchart TD
       A[Start] --> B[End]`);
 
     expect(ast.nodes.find((n) => n.id === "A")!.label).toBe("Start");
@@ -24,7 +25,7 @@ describe("flowchart parser", () => {
   });
 
   it("parses diamond shapes", () => {
-    const ast = parse(`flowchart TD
+    const { ast } = parse(`flowchart TD
       A{Decision}`);
 
     const node = ast.nodes.find((n) => n.id === "A");
@@ -33,7 +34,7 @@ describe("flowchart parser", () => {
   });
 
   it("parses rounded shapes", () => {
-    const ast = parse(`flowchart TD
+    const { ast } = parse(`flowchart TD
       A(Rounded)`);
 
     const node = ast.nodes.find((n) => n.id === "A");
@@ -42,7 +43,7 @@ describe("flowchart parser", () => {
   });
 
   it("parses stadium shapes", () => {
-    const ast = parse(`flowchart TD
+    const { ast } = parse(`flowchart TD
       A([Stadium])`);
 
     const node = ast.nodes.find((n) => n.id === "A");
@@ -51,28 +52,28 @@ describe("flowchart parser", () => {
   });
 
   it("parses edge labels", () => {
-    const ast = parse(`flowchart LR
+    const { ast } = parse(`flowchart LR
       A -->|Yes| B`);
 
     expect(ast.edges[0]!.label).toBe("Yes");
   });
 
   it("parses dotted edges", () => {
-    const ast = parse(`flowchart LR
+    const { ast } = parse(`flowchart LR
       A -.-> B`);
 
     expect(ast.edges[0]!.style).toBe("dotted");
   });
 
   it("parses thick edges", () => {
-    const ast = parse(`flowchart LR
+    const { ast } = parse(`flowchart LR
       A ==> B`);
 
     expect(ast.edges[0]!.style).toBe("thick");
   });
 
   it("parses multiple edges in a chain", () => {
-    const ast = parse(`flowchart LR
+    const { ast } = parse(`flowchart LR
       A --> B --> C`);
 
     expect(ast.nodes).toHaveLength(3);
@@ -84,7 +85,7 @@ describe("flowchart parser", () => {
   });
 
   it("parses multi-line flowcharts", () => {
-    const ast = parse(`flowchart TD
+    const { ast } = parse(`flowchart TD
       A[Start] --> B{Decision}
       B -->|Yes| C[Do thing]
       B -->|No| D[Other thing]`);
@@ -94,13 +95,17 @@ describe("flowchart parser", () => {
   });
 
   it("defaults to TB direction", () => {
-    const ast = parse(`flowchart
+    const { ast } = parse(`flowchart
       A --> B`);
 
     expect(ast.direction).toBe("TB");
   });
 
-  it("throws on unknown diagram type", () => {
-    expect(() => parse("unknown A --> B")).toThrow("Unknown diagram type");
+  it("falls back to flowchart on unknown diagram type instead of throwing", () => {
+    const { ast, warnings } = parse("unknown A --> B");
+
+    expect(ast.type).toBe("flowchart");
+    expect(warnings.length).toBeGreaterThan(0);
+    expect(warnings[0]!.message).toContain("Unknown diagram type");
   });
 });

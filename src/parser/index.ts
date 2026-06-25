@@ -1,24 +1,32 @@
-import type { DiagramAST, DiagramType } from "../types.js";
+import type { DiagramType, ParseResult, ParseWarning } from "../types.js";
 import { tokenize } from "./tokenizer.js";
 import { parseFlowchart } from "./flowchart.js";
 
-function detectType(input: string): DiagramType {
+function detectType(input: string, warnings: ParseWarning[]): DiagramType {
   const trimmed = input.trim();
   if (trimmed.startsWith("flowchart") || trimmed.startsWith("graph")) {
     return "flowchart";
   }
-  throw new Error(`Unknown diagram type. Input must start with: flowchart, graph`);
+  // Fallback: assume flowchart and warn
+  warnings.push({
+    line: 1,
+    col: 1,
+    message: `Unknown diagram type — treating as flowchart`,
+  });
+  return "flowchart";
 }
 
-export function parse(input: string): DiagramAST {
-  const diagramType = detectType(input);
-  const tokens = tokenize(input);
+export function parse(input: string): ParseResult {
+  const warnings: ParseWarning[] = [];
+  const diagramType = detectType(input, warnings);
+  const { tokens, warnings: tokenWarnings } = tokenize(input);
+  warnings.push(...tokenWarnings);
 
   switch (diagramType) {
     case "flowchart":
-      return parseFlowchart(tokens);
+      return { ast: parseFlowchart(tokens, warnings), warnings };
     default:
-      throw new Error(`Unsupported diagram type: ${diagramType}`);
+      return { ast: parseFlowchart(tokens, warnings), warnings };
   }
 }
 
