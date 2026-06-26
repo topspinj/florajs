@@ -13,7 +13,6 @@ describe("subgraph layout", () => {
 
     expect(layout.subgraphs).toHaveLength(1);
     expect(layout.subgraphs[0]!.id).toBe("SG1");
-    expect(layout.subgraphs[0]!.collapsed).toBe(false);
     expect(layout.subgraphs[0]!.width).toBeGreaterThan(0);
     expect(layout.subgraphs[0]!.height).toBeGreaterThan(0);
   });
@@ -43,49 +42,6 @@ describe("subgraph layout", () => {
     }
   });
 
-  it("collapses a subgraph into a summary node", () => {
-    const { ast } = parse(`flowchart TD
-      subgraph SG1
-        A[Node A] --> B[Node B]
-      end
-      C[Outside] --> A`);
-
-    const collapsed = new Set(["SG1"]);
-    const layout = computeLayout(ast, undefined, collapsed);
-
-    // Summary node should exist
-    const summaryNode = layout.nodes.find((n) => n.subgraphSummary === "SG1");
-    expect(summaryNode).toBeDefined();
-    expect(summaryNode!.label).toContain("SG1");
-    expect(summaryNode!.label).toContain("2");
-
-    // Original nodes A, B should not be in layout
-    expect(layout.nodes.find((n) => n.id === "A")).toBeUndefined();
-    expect(layout.nodes.find((n) => n.id === "B")).toBeUndefined();
-
-    // C should still exist
-    expect(layout.nodes.find((n) => n.id === "C")).toBeDefined();
-
-    // Edge from C should now point to summary node
-    const edge = layout.edges.find((e) => e.from === "C");
-    expect(edge).toBeDefined();
-    expect(edge!.to).toBe("__collapsed_SG1");
-  });
-
-  it("drops internal edges when subgraph is collapsed", () => {
-    const { ast } = parse(`flowchart TD
-      subgraph SG1
-        A --> B
-        B --> C
-      end`);
-
-    const collapsed = new Set(["SG1"]);
-    const layout = computeLayout(ast, undefined, collapsed);
-
-    // No internal edges should remain
-    expect(layout.edges).toHaveLength(0);
-  });
-
   it("handles nested subgraphs in layout", () => {
     const { ast } = parse(`flowchart TD
       subgraph Outer
@@ -103,5 +59,24 @@ describe("subgraph layout", () => {
     expect(outer).toBeDefined();
     expect(inner).toBeDefined();
     expect(inner!.parentId).toBe("Outer");
+  });
+
+  it("nested subgraph is contained within parent subgraph", () => {
+    const { ast } = parse(`flowchart TD
+      subgraph Outer
+        A --> B
+        subgraph Inner
+          C --> D
+        end
+      end`);
+
+    const layout = computeLayout(ast);
+    const outer = layout.subgraphs.find((sg) => sg.id === "Outer")!;
+    const inner = layout.subgraphs.find((sg) => sg.id === "Inner")!;
+
+    expect(inner.x).toBeGreaterThanOrEqual(outer.x);
+    expect(inner.y).toBeGreaterThanOrEqual(outer.y);
+    expect(inner.x + inner.width).toBeLessThanOrEqual(outer.x + outer.width);
+    expect(inner.y + inner.height).toBeLessThanOrEqual(outer.y + outer.height);
   });
 });

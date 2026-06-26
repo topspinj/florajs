@@ -236,8 +236,7 @@ npx serve .
   <span class="t-kw">end</span>
   App <span class="t-op">--&gt;</span> API</code></pre>
         <p>
-          Click the subgraph label to collapse/expand it. When collapsed, all internal nodes are replaced
-          by a single summary node showing the group name and node count.
+          Subgraphs render as dashed containers with a label pill. Nested subgraphs are supported.
         </p>
       </section>
 
@@ -352,12 +351,6 @@ console.<span class="t-fn">log</span>(ast.edges);
                 <td><code>(nodeId: string | null) =&gt; void</code></td>
                 <td>&mdash;</td>
                 <td>Called on mouseenter/mouseleave (<code>null</code> on leave)</td>
-              </tr>
-              <tr>
-                <td><code>onSubgraphClick</code></td>
-                <td><code>(subgraphId: string) =&gt; void</code></td>
-                <td>&mdash;</td>
-                <td>Called when a subgraph is collapsed/expanded</td>
               </tr>
               <tr>
                 <td><code>onHighlight</code></td>

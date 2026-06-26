@@ -247,13 +247,6 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
     group.setAttribute("filter", "url(#flora-rough)");
   }
 
-  // Collapsed subgraph summary nodes get a dashed border
-  if (node.subgraphSummary) {
-    shape.setAttribute("stroke-dasharray", "6,3");
-    shape.setAttribute("stroke", theme.subgraphColors.stroke);
-    shape.removeAttribute("filter");
-  }
-
   group.appendChild(shape);
 
   // Shift text down for cylinders to center within the body (below the top ellipse cap)
@@ -264,10 +257,10 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
     y: node.y + textYOffset,
     "text-anchor": "middle",
     "dominant-baseline": "central",
-    fill: node.subgraphSummary ? theme.subgraphColors.label : colors.text,
+    fill: colors.text,
     "font-family": theme.fontFamily,
     "font-size": theme.fontSize,
-    "font-weight": node.subgraphSummary ? "500" : "400",
+    "font-weight": "400",
   });
   text.textContent = node.label;
   group.appendChild(text);
@@ -371,11 +364,7 @@ function renderEdge(edge: LayoutEdge, theme: FloraTheme): SVGGElement {
   return group;
 }
 
-function renderSubgraph(
-  sg: LayoutSubgraph,
-  theme: FloraTheme,
-  onToggle?: (subgraphId: string) => void
-): SVGGElement {
+function renderSubgraph(sg: LayoutSubgraph, theme: FloraTheme): SVGGElement {
   const group = el("g", { class: "flora-subgraph", "data-id": sg.id }) as SVGGElement;
 
   const rect = el("rect", {
@@ -394,7 +383,7 @@ function renderSubgraph(
 
   // Label background pill
   const labelText = sg.label;
-  const labelWidth = labelText.length * 8 + 40;
+  const labelWidth = labelText.length * 8 + 20;
   const labelHeight = 22;
   const labelX = sg.x + 12;
   const labelY = sg.y + 8;
@@ -422,40 +411,6 @@ function renderSubgraph(
   });
   label.textContent = labelText;
   group.appendChild(label);
-
-  // Collapse/expand icon
-  const iconX = labelX + labelWidth + 6;
-  const iconY = labelY + labelHeight / 2;
-  const icon = el("text", {
-    x: iconX,
-    y: iconY + 1,
-    "text-anchor": "middle",
-    "dominant-baseline": "central",
-    fill: theme.subgraphColors.label,
-    "font-family": theme.fontFamily,
-    "font-size": theme.fontSize - 2,
-    "font-weight": "400",
-  });
-  icon.textContent = sg.collapsed ? "+" : "\u2212"; // minus sign
-  group.appendChild(icon);
-
-  if (onToggle) {
-    // Make label area clickable
-    const hitArea = el("rect", {
-      x: labelX - 4,
-      y: labelY - 4,
-      width: labelWidth + 30,
-      height: labelHeight + 8,
-      fill: "transparent",
-    });
-    hitArea.style.cursor = "pointer";
-    group.appendChild(hitArea);
-
-    hitArea.addEventListener("click", (e) => {
-      e.stopPropagation();
-      onToggle(sg.id);
-    });
-  }
 
   if (theme.handDrawn) {
     group.setAttribute("filter", "url(#flora-rough)");
@@ -533,7 +488,6 @@ function addZoomPan(svg: SVGSVGElement, content: SVGGElement): void {
 export function renderSVG(
   layout: LayoutResult,
   options: FloraOptions = {},
-  onToggleSubgraph?: (subgraphId: string) => void
 ): SVGSVGElement {
   const theme = resolveTheme(options.theme);
   const padding = 60;
@@ -569,16 +523,15 @@ export function renderSVG(
   const content = el("g", { transform: `translate(${padding},${padding})` }) as SVGGElement;
 
   // Render subgraph containers first (behind everything)
-  const expandedSubgraphs = layout.subgraphs.filter((sg) => !sg.collapsed);
   // Sort by depth (parents first) so nested subgraphs render on top of parent containers
-  const sortedSubgraphs = [...expandedSubgraphs].sort((a, b) => {
-    const depthA = getSubgraphDepth(a, expandedSubgraphs);
-    const depthB = getSubgraphDepth(b, expandedSubgraphs);
+  const sortedSubgraphs = [...layout.subgraphs].sort((a, b) => {
+    const depthA = getSubgraphDepth(a, layout.subgraphs);
+    const depthB = getSubgraphDepth(b, layout.subgraphs);
     return depthA - depthB;
   });
 
   for (const sg of sortedSubgraphs) {
-    content.appendChild(renderSubgraph(sg, theme, onToggleSubgraph));
+    content.appendChild(renderSubgraph(sg, theme));
   }
 
   // Render edges
@@ -586,20 +539,9 @@ export function renderSVG(
     content.appendChild(renderEdge(edge, theme));
   }
 
-  // Render nodes (including summary nodes for collapsed subgraphs)
+  // Render nodes
   for (const node of layout.nodes) {
-    const nodeGroup = renderNode(node, theme, options);
-
-    // For collapsed subgraph summary nodes, add click-to-expand
-    if (node.subgraphSummary && onToggleSubgraph) {
-      nodeGroup.style.cursor = "pointer";
-      nodeGroup.addEventListener("click", (e) => {
-        e.stopPropagation();
-        onToggleSubgraph(node.subgraphSummary!);
-      });
-    }
-
-    content.appendChild(nodeGroup);
+    content.appendChild(renderNode(node, theme, options));
   }
 
   svg.appendChild(content);
@@ -650,13 +592,9 @@ export function renderSVG(
       options.onHighlight?.(nodeId, [...upstream], [...downstream]);
     }
 
-    // Attach click handlers to non-summary nodes
     content.querySelectorAll<SVGGElement>(".flora-node").forEach((nodeEl) => {
       const id = nodeEl.getAttribute("data-id");
       if (!id) return;
-      // Skip collapsed subgraph summary nodes (they have their own click handler)
-      const node = layout.nodes.find((n) => n.id === id);
-      if (node?.subgraphSummary) return;
 
       nodeEl.style.cursor = "pointer";
       nodeEl.addEventListener("click", (e) => {

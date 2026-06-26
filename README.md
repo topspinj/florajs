@@ -87,9 +87,7 @@ flowchart TD
   end
 ```
 
-Subgraphs render with a dashed border and a label pill. Click the collapse button (−/+) to toggle — collapsed subgraphs are replaced by a single summary node showing the group name and node count.
-
-Nested subgraphs are supported.
+Subgraphs render with a dashed border and a label pill. Nested subgraphs are supported.
 
 ## Interactivity
 

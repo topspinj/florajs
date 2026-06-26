@@ -105,12 +105,80 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
     }
   }
 
+  // Parse a single statement (node definition + optional edge chain).
+  // Returns the node IDs encountered.
+  function parseStatement(): string[] {
+    const nodeIds: string[] = [];
+    const currentToken = current();
+    let currentId = currentToken.value;
+    pos++;
+    nodeIds.push(currentId);
+
+    try {
+      parseNodeDefinition(currentId);
+
+      while (current().type === "arrow") {
+        const arrow = current().value;
+        const style = arrowStyle(arrow);
+        pos++;
+
+        let edgeLabel: string | undefined;
+        if (current().type === "pipe_text") {
+          edgeLabel = current().value;
+          pos++;
+        }
+
+        if (current().type === "identifier") {
+          const nextId = current().value;
+          pos++;
+          nodeIds.push(nextId);
+          parseNodeDefinition(nextId);
+          ensureNode(currentId);
+          ensureNode(nextId);
+
+          edges.push({
+            from: currentId,
+            to: nextId,
+            label: edgeLabel,
+            style,
+          });
+
+          currentId = nextId;
+        } else if (current().type !== "newline" && current().type !== "eof") {
+          warnings.push({
+            line: current().line,
+            col: current().col,
+            message: `Expected node identifier after arrow, got '${current().value || current().type}'`,
+          });
+          skipToNextLine();
+          break;
+        } else {
+          warnings.push({
+            line: currentToken.line,
+            col: currentToken.col,
+            message: `Dangling arrow with no target node`,
+          });
+          break;
+        }
+      }
+    } catch {
+      warnings.push({
+        line: currentToken.line,
+        col: currentToken.col,
+        message: `Could not parse line starting with '${currentId}'`,
+      });
+      skipToNextLine();
+    }
+
+    return nodeIds;
+  }
+
   function parseSubgraph(lineStartToken: Token, parentId?: string): void {
     pos++; // skip "subgraph"
     const id = current().value;
     pos++;
     skipNewlines();
-    const subgraphNodes: string[] = [];
+    const subgraphNodeIds = new Set<string>();
 
     while (
       pos < tokens.length &&
@@ -124,20 +192,40 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
         });
         break;
       }
+
+      skipNewlines();
+      if (current().type === "keyword" && current().value === "end") break;
+
       // Handle nested subgraphs
       if (current().type === "keyword" && current().value === "subgraph") {
         const nestedStart = current();
         parseSubgraph(nestedStart, id);
         continue;
       }
+
+      // Parse statements (node definitions + edges)
       if (current().type === "identifier") {
-        subgraphNodes.push(current().value);
+        const nodeIds = parseStatement();
+        for (const nodeId of nodeIds) {
+          subgraphNodeIds.add(nodeId);
+        }
+        continue;
       }
-      pos++;
+
+      // Skip unexpected tokens
+      if (current().type !== "newline" && current().type !== "eof") {
+        const unexpected = current();
+        warnings.push({
+          line: unexpected.line,
+          col: unexpected.col,
+          message: `Unexpected ${unexpected.type}${unexpected.value ? ` '${unexpected.value}'` : ""} in subgraph '${id}'`,
+        });
+        pos++;
+      }
     }
     if (current().type === "keyword" && current().value === "end") pos++;
 
-    subgraphs.push({ id, label: id, nodeIds: subgraphNodes, parentId });
+    subgraphs.push({ id, label: id, nodeIds: [...subgraphNodeIds], parentId });
   }
 
   if (current().type === "keyword" && (current().value === "flowchart" || current().value === "graph")) {
@@ -162,67 +250,7 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
     }
 
     if (current().type === "identifier") {
-      const currentToken = current();
-      let currentId = currentToken.value;
-      pos++;
-
-      try {
-        parseNodeDefinition(currentId);
-
-        while (current().type === "arrow") {
-          const arrow = current().value;
-          const style = arrowStyle(arrow);
-          pos++;
-
-          let edgeLabel: string | undefined;
-          if (current().type === "pipe_text") {
-            edgeLabel = current().value;
-            pos++;
-          }
-
-          if (current().type === "identifier") {
-            const nextId = current().value;
-            pos++;
-            parseNodeDefinition(nextId);
-            ensureNode(currentId);
-            ensureNode(nextId);
-
-            edges.push({
-              from: currentId,
-              to: nextId,
-              label: edgeLabel,
-              style,
-            });
-
-            currentId = nextId;
-          } else if (current().type !== "newline" && current().type !== "eof") {
-            // Arrow followed by something unexpected — warn and skip rest of line
-            warnings.push({
-              line: current().line,
-              col: current().col,
-              message: `Expected node identifier after arrow, got '${current().value || current().type}'`,
-            });
-            skipToNextLine();
-            break;
-          } else {
-            // Arrow at end of line with no target — warn
-            warnings.push({
-              line: currentToken.line,
-              col: currentToken.col,
-              message: `Dangling arrow with no target node`,
-            });
-            break;
-          }
-        }
-      } catch {
-        // If anything goes wrong parsing this line, skip it and warn
-        warnings.push({
-          line: currentToken.line,
-          col: currentToken.col,
-          message: `Could not parse line starting with '${currentId}'`,
-        });
-        skipToNextLine();
-      }
+      parseStatement();
       continue;
     }
 

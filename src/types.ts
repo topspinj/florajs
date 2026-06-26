@@ -42,7 +42,6 @@ export interface LayoutNode {
   height: number;
   label: string;
   shape: NodeShape;
-  subgraphSummary?: string;
 }
 
 export interface LayoutSubgraph {
@@ -52,7 +51,6 @@ export interface LayoutSubgraph {
   y: number;
   width: number;
   height: number;
-  collapsed: boolean;
   nodeCount: number;
   parentId?: string;
 }
@@ -116,7 +114,6 @@ export interface FloraOptions {
   interactive?: boolean;
   onNodeClick?: (nodeId: string) => void;
   onNodeHover?: (nodeId: string | null) => void;
-  onSubgraphClick?: (subgraphId: string) => void;
   onHighlight?: (nodeId: string, upstream: string[], downstream: string[]) => void;
 }
 

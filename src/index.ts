@@ -14,25 +14,11 @@ export interface RenderResult {
 export function render(input: string, target: HTMLElement, options: FloraOptions = {}): RenderResult {
   const { ast, warnings } = parse(input);
   const theme = resolveTheme(options.theme);
-  const collapsedSubgraphs = new Set<string>();
+  const layout = computeLayout(ast, theme);
+  const svg = renderSVG(layout, options);
 
-  function doRender(): void {
-    const layout = computeLayout(ast, theme, collapsedSubgraphs);
-    const svg = renderSVG(layout, options, (subgraphId) => {
-      if (collapsedSubgraphs.has(subgraphId)) {
-        collapsedSubgraphs.delete(subgraphId);
-      } else {
-        collapsedSubgraphs.add(subgraphId);
-      }
-      options.onSubgraphClick?.(subgraphId);
-      doRender();
-    });
-
-    target.innerHTML = "";
-    target.appendChild(svg);
-  }
-
-  doRender();
+  target.innerHTML = "";
+  target.appendChild(svg);
 
   return { warnings };
 }

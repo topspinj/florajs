@@ -1,5 +1,5 @@
 import dagre from "@dagrejs/dagre";
-import type { FlowchartAST, FlowchartSubgraph, LayoutResult, LayoutNode, LayoutSubgraph, FloraTheme, NodeShape } from "../types.js";
+import type { FlowchartAST, LayoutResult, LayoutNode, LayoutSubgraph, FloraTheme } from "../types.js";
 import { defaultTheme } from "../themes/default.js";
 
 function estimateTextWidth(text: string, fontSize: number): number {
@@ -59,33 +59,22 @@ function intersectNode(node: LayoutNode, point: Point): Point {
   }
 }
 
-function collectAllSubgraphNodes(
-  subgraphId: string,
-  subgraphMap: Map<string, FlowchartSubgraph>,
-  childSubgraphs: Map<string, string[]>
-): Set<string> {
-  const result = new Set<string>();
-  const sg = subgraphMap.get(subgraphId);
-  if (!sg) return result;
-
-  for (const nodeId of sg.nodeIds) {
-    result.add(nodeId);
+function getDepth(sg: { id: string; parentId?: string }, all: Array<{ id: string; parentId?: string }>): number {
+  let depth = 0;
+  let current = sg;
+  while (current.parentId) {
+    depth++;
+    const parent = all.find((s) => s.id === current.parentId);
+    if (!parent) break;
+    current = parent;
   }
-  for (const childId of childSubgraphs.get(subgraphId) ?? []) {
-    for (const nodeId of collectAllSubgraphNodes(childId, subgraphMap, childSubgraphs)) {
-      result.add(nodeId);
-    }
-  }
-  return result;
+  return depth;
 }
 
 export function computeLayout(
   ast: FlowchartAST,
   theme: FloraTheme = defaultTheme,
-  collapsedSubgraphs: Set<string> = new Set()
 ): LayoutResult {
-  const subgraphMap = new Map(ast.subgraphs.map((sg) => [sg.id, sg]));
-
   // Build parent->children map for subgraphs
   const childSubgraphs = new Map<string, string[]>();
   for (const sg of ast.subgraphs) {
@@ -95,79 +84,6 @@ export function computeLayout(
       childSubgraphs.set(sg.parentId, children);
     }
   }
-
-  // Determine which nodes are hidden (inside a collapsed subgraph)
-  const hiddenNodes = new Set<string>();
-  const collapsedSubgraphNodes = new Map<string, Set<string>>();
-
-  for (const sgId of collapsedSubgraphs) {
-    const allNodes = collectAllSubgraphNodes(sgId, subgraphMap, childSubgraphs);
-    collapsedSubgraphNodes.set(sgId, allNodes);
-    for (const nodeId of allNodes) {
-      hiddenNodes.add(nodeId);
-    }
-  }
-
-  // Build effective node list and summary nodes
-  const effectiveNodes = ast.nodes.filter((n) => !hiddenNodes.has(n.id));
-  const summaryNodes: Array<{ id: string; label: string; shape: NodeShape; subgraphId: string; nodeCount: number }> = [];
-
-  for (const sgId of collapsedSubgraphs) {
-    const sg = subgraphMap.get(sgId);
-    if (!sg) continue;
-    const allNodes = collapsedSubgraphNodes.get(sgId)!;
-    const summaryId = `__collapsed_${sgId}`;
-    summaryNodes.push({
-      id: summaryId,
-      label: `${sg.label} (${allNodes.size})`,
-      shape: "rounded",
-      subgraphId: sgId,
-      nodeCount: allNodes.size,
-    });
-  }
-
-  // Build effective edges: reroute cross-boundary, drop internal
-  const effectiveEdges = [];
-  for (const edge of ast.edges) {
-    const fromHidden = hiddenNodes.has(edge.from);
-    const toHidden = hiddenNodes.has(edge.to);
-
-    if (fromHidden && toHidden) {
-      // Find which collapsed subgraphs contain each endpoint
-      const fromSg = findCollapsedSubgraph(edge.from, collapsedSubgraphs, collapsedSubgraphNodes);
-      const toSg = findCollapsedSubgraph(edge.to, collapsedSubgraphs, collapsedSubgraphNodes);
-      if (fromSg === toSg) continue; // internal edge — drop
-      // Cross-boundary between two different collapsed subgraphs
-      effectiveEdges.push({
-        ...edge,
-        from: `__collapsed_${fromSg}`,
-        to: `__collapsed_${toSg}`,
-      });
-    } else if (fromHidden) {
-      const fromSg = findCollapsedSubgraph(edge.from, collapsedSubgraphs, collapsedSubgraphNodes)!;
-      effectiveEdges.push({ ...edge, from: `__collapsed_${fromSg}` });
-    } else if (toHidden) {
-      const toSg = findCollapsedSubgraph(edge.to, collapsedSubgraphs, collapsedSubgraphNodes)!;
-      effectiveEdges.push({ ...edge, to: `__collapsed_${toSg}` });
-    } else {
-      effectiveEdges.push(edge);
-    }
-  }
-
-  // Deduplicate rerouted edges (multiple edges may map to the same summary pair)
-  const edgeKey = (e: { from: string; to: string }) => `${e.from}→${e.to}`;
-  const seenEdges = new Set<string>();
-  const dedupedEdges = effectiveEdges.filter((e) => {
-    const key = edgeKey(e);
-    if (seenEdges.has(key)) return false;
-    seenEdges.add(key);
-    return true;
-  });
-
-  // Determine which subgraphs are expanded (not collapsed and not inside a collapsed parent)
-  const expandedSubgraphs = ast.subgraphs.filter(
-    (sg) => !collapsedSubgraphs.has(sg.id) && !isInsideCollapsed(sg.id, subgraphMap, collapsedSubgraphs)
-  );
 
   // Create dagre graph with compound support
   const g = new dagre.graphlib.Graph({ compound: true });
@@ -184,19 +100,19 @@ export function computeLayout(
   g.setDefaultEdgeLabel(() => ({}));
 
   // Add subgraph "cluster" nodes
-  for (const sg of expandedSubgraphs) {
+  for (const sg of ast.subgraphs) {
     g.setNode(sg.id, { label: sg.label, width: 0, height: 0 });
   }
 
   // Set subgraph parent relationships
-  for (const sg of expandedSubgraphs) {
-    if (sg.parentId && expandedSubgraphs.some((p) => p.id === sg.parentId)) {
+  for (const sg of ast.subgraphs) {
+    if (sg.parentId && ast.subgraphs.some((p) => p.id === sg.parentId)) {
       g.setParent(sg.id, sg.parentId);
     }
   }
 
-  // Add effective nodes
-  for (const node of effectiveNodes) {
+  // Add nodes
+  for (const node of ast.nodes) {
     const textWidth = estimateTextWidth(node.label, theme.fontSize);
     let width = Math.max(textWidth + theme.nodePadding.x * 2, 100);
     let height = theme.fontSize + theme.nodePadding.y * 2 + 12;
@@ -207,36 +123,22 @@ export function computeLayout(
     } else if (node.shape === "stadium") {
       width = Math.max(width, 120);
     } else if (node.shape === "cylinder") {
-      height += 20; // extra space for the elliptical caps
+      height += 20;
     } else if (node.shape === "queue") {
-      width += 24; // extra space for the elliptical cap on the right
+      width += 24;
     }
 
     g.setNode(node.id, { label: node.label, width, height });
 
     // Set parent for compound layout
-    const parentSg = expandedSubgraphs.find((sg) => sg.nodeIds.includes(node.id));
+    const parentSg = ast.subgraphs.find((sg) => sg.nodeIds.includes(node.id));
     if (parentSg) {
       g.setParent(node.id, parentSg.id);
     }
   }
 
-  // Add summary nodes for collapsed subgraphs
-  for (const sn of summaryNodes) {
-    const textWidth = estimateTextWidth(sn.label, theme.fontSize);
-    const width = Math.max(textWidth + theme.nodePadding.x * 2, 140);
-    const height = theme.fontSize + theme.nodePadding.y * 2 + 12;
-    g.setNode(sn.id, { label: sn.label, width, height });
-
-    // If the collapsed subgraph has a parent that is expanded, set parent
-    const sg = subgraphMap.get(sn.subgraphId)!;
-    if (sg.parentId && expandedSubgraphs.some((p) => p.id === sg.parentId)) {
-      g.setParent(sn.id, sg.parentId);
-    }
-  }
-
   // Add edges
-  for (const edge of dedupedEdges) {
+  for (const edge of ast.edges) {
     if (g.hasNode(edge.from) && g.hasNode(edge.to)) {
       g.setEdge(edge.from, edge.to, {
         label: edge.label ?? "",
@@ -248,32 +150,23 @@ export function computeLayout(
   dagre.layout(g);
 
   // Extract layout nodes
-  const allEffectiveNodeIds = [
-    ...effectiveNodes.map((n) => n.id),
-    ...summaryNodes.map((sn) => sn.id),
-  ];
-
-  const layoutNodes: LayoutNode[] = allEffectiveNodeIds.map((id) => {
-    const dagreNode = g.node(id);
-    const astNode = effectiveNodes.find((n) => n.id === id);
-    const summaryNode = summaryNodes.find((sn) => sn.id === id);
-
+  const layoutNodes: LayoutNode[] = ast.nodes.map((node) => {
+    const dagreNode = g.node(node.id);
     return {
-      id,
+      id: node.id,
       x: dagreNode.x,
       y: dagreNode.y,
       width: dagreNode.width,
       height: dagreNode.height,
-      label: astNode?.label ?? summaryNode?.label ?? id,
-      shape: astNode?.shape ?? summaryNode?.shape ?? "rect",
-      subgraphSummary: summaryNode?.subgraphId,
+      label: node.label,
+      shape: node.shape,
     };
   });
 
   const nodeMap = new Map(layoutNodes.map((n) => [n.id, n]));
 
   // Extract layout edges
-  const layoutEdges = dedupedEdges
+  const layoutEdges = ast.edges
     .filter((edge) => g.hasNode(edge.from) && g.hasNode(edge.to))
     .map((edge) => {
       const dagreEdge = g.edge(edge.from, edge.to);
@@ -297,12 +190,17 @@ export function computeLayout(
       };
     });
 
-  // Compute subgraph bounding boxes from child node positions
-  const layoutSubgraphs: LayoutSubgraph[] = expandedSubgraphs.map((sg) => {
+  // Compute subgraph bounding boxes bottom-up (children before parents)
+  const sortedForBounds = [...ast.subgraphs].sort((a, b) => {
+    return getDepth(b, ast.subgraphs) - getDepth(a, ast.subgraphs);
+  });
+
+  const layoutSubgraphMap = new Map<string, LayoutSubgraph>();
+
+  for (const sg of sortedForBounds) {
     const childNodeIds = sg.nodeIds.filter((id) => nodeMap.has(id));
-    // Also include child subgraph bounding boxes
-    const childSgs = (childSubgraphs.get(sg.id) ?? [])
-      .filter((cid) => expandedSubgraphs.some((s) => s.id === cid));
+    const childSgIds = (childSubgraphs.get(sg.id) ?? [])
+      .filter((cid) => ast.subgraphs.some((s) => s.id === cid));
 
     const padding = 30;
     const labelHeight = 28;
@@ -317,26 +215,18 @@ export function computeLayout(
       maxY = Math.max(maxY, n.y + n.height / 2);
     }
 
-    // Include summary nodes that belong to child collapsed subgraphs
-    for (const sn of summaryNodes) {
-      if (sg.nodeIds.includes(sn.subgraphId) || childSgs.includes(sn.subgraphId)) {
-        // This subgraph's summary node isn't directly in nodeIds but might be laid out as a child
-      }
-      const snNode = nodeMap.get(sn.id);
-      if (snNode && sg.parentId === undefined) {
-        // Check if this summary node's subgraph is a child of this subgraph
-        const snSg = subgraphMap.get(sn.subgraphId);
-        if (snSg?.parentId === sg.id) {
-          minX = Math.min(minX, snNode.x - snNode.width / 2);
-          minY = Math.min(minY, snNode.y - snNode.height / 2);
-          maxX = Math.max(maxX, snNode.x + snNode.width / 2);
-          maxY = Math.max(maxY, snNode.y + snNode.height / 2);
-        }
+    // Include nested subgraph bounding boxes (already computed)
+    for (const childSgId of childSgIds) {
+      const childSg = layoutSubgraphMap.get(childSgId);
+      if (childSg) {
+        minX = Math.min(minX, childSg.x);
+        minY = Math.min(minY, childSg.y);
+        maxX = Math.max(maxX, childSg.x + childSg.width);
+        maxY = Math.max(maxY, childSg.y + childSg.height);
       }
     }
 
     if (minX === Infinity) {
-      // No visible children — use dagre's computed position for the subgraph node
       const dagreNode = g.node(sg.id);
       if (dagreNode) {
         minX = dagreNode.x - 50;
@@ -353,39 +243,18 @@ export function computeLayout(
     const width = maxX - minX + padding * 2;
     const height = maxY - minY + padding * 2 + labelHeight;
 
-    return {
+    const layoutSg: LayoutSubgraph = {
       id: sg.id,
       label: sg.label,
       x,
       y,
       width,
       height,
-      collapsed: false,
       nodeCount: sg.nodeIds.length,
       parentId: sg.parentId,
     };
-  });
 
-  // Add collapsed subgraphs to the result
-  for (const sgId of collapsedSubgraphs) {
-    const sg = subgraphMap.get(sgId);
-    if (!sg) continue;
-    if (isInsideCollapsed(sgId, subgraphMap, collapsedSubgraphs)) continue;
-
-    const summaryNode = nodeMap.get(`__collapsed_${sgId}`);
-    const allNodes = collapsedSubgraphNodes.get(sgId)!;
-
-    layoutSubgraphs.push({
-      id: sg.id,
-      label: sg.label,
-      x: summaryNode ? summaryNode.x - summaryNode.width / 2 : 0,
-      y: summaryNode ? summaryNode.y - summaryNode.height / 2 : 0,
-      width: summaryNode?.width ?? 100,
-      height: summaryNode?.height ?? 50,
-      collapsed: true,
-      nodeCount: allNodes.size,
-      parentId: sg.parentId,
-    });
+    layoutSubgraphMap.set(sg.id, layoutSg);
   }
 
   const graphInfo = g.graph();
@@ -393,32 +262,8 @@ export function computeLayout(
   return {
     nodes: layoutNodes,
     edges: layoutEdges,
-    subgraphs: layoutSubgraphs,
+    subgraphs: [...layoutSubgraphMap.values()],
     width: graphInfo.width ?? 400,
     height: graphInfo.height ?? 300,
   };
-}
-
-function findCollapsedSubgraph(
-  nodeId: string,
-  collapsedSubgraphs: Set<string>,
-  collapsedSubgraphNodes: Map<string, Set<string>>
-): string | undefined {
-  for (const [sgId, nodes] of collapsedSubgraphNodes) {
-    if (collapsedSubgraphs.has(sgId) && nodes.has(nodeId)) {
-      return sgId;
-    }
-  }
-  return undefined;
-}
-
-function isInsideCollapsed(
-  subgraphId: string,
-  subgraphMap: Map<string, FlowchartSubgraph>,
-  collapsedSubgraphs: Set<string>
-): boolean {
-  const sg = subgraphMap.get(subgraphId);
-  if (!sg?.parentId) return false;
-  if (collapsedSubgraphs.has(sg.parentId)) return true;
-  return isInsideCollapsed(sg.parentId, subgraphMap, collapsedSubgraphs);
 }
