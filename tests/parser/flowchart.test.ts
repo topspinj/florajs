@@ -51,6 +51,24 @@ describe("flowchart parser", () => {
     expect(node!.label).toBe("Stadium");
   });
 
+  it("parses cylinder shapes", () => {
+    const { ast } = parse(`flowchart TD
+      A[(Database)]`);
+
+    const node = ast.nodes.find((n) => n.id === "A");
+    expect(node!.shape).toBe("cylinder");
+    expect(node!.label).toBe("Database");
+  });
+
+  it("parses cylinder shapes in chains", () => {
+    const { ast } = parse(`flowchart LR
+      A[Producer] --> B[(Kafka)] --> C[Consumer]`);
+
+    expect(ast.nodes).toHaveLength(3);
+    expect(ast.nodes.find((n) => n.id === "B")!.shape).toBe("cylinder");
+    expect(ast.edges).toHaveLength(2);
+  });
+
   it("parses edge labels", () => {
     const { ast } = parse(`flowchart LR
       A -->|Yes| B`);

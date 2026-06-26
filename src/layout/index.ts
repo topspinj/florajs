@@ -206,6 +206,10 @@ export function computeLayout(
       height = Math.max(height * 1.6, 80);
     } else if (node.shape === "stadium") {
       width = Math.max(width, 120);
+    } else if (node.shape === "cylinder") {
+      height += 20; // extra space for the elliptical caps
+    } else if (node.shape === "queue") {
+      width += 24; // extra space for the elliptical cap on the right
     }
 
     g.setNode(node.id, { label: node.label, width, height });

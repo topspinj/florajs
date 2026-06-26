@@ -21,6 +21,8 @@ export function resolveTheme(theme?: ThemePreset | Partial<FloraTheme>): FloraTh
       diamond: { ...base.shapeColors.diamond, ...theme.shapeColors?.diamond },
       stadium: { ...base.shapeColors.stadium, ...theme.shapeColors?.stadium },
       rounded: { ...base.shapeColors.rounded, ...theme.shapeColors?.rounded },
+      cylinder: { ...base.shapeColors.cylinder, ...theme.shapeColors?.cylinder },
+      queue: { ...base.shapeColors.queue, ...theme.shapeColors?.queue },
     },
     edgeColors: { ...base.edgeColors, ...theme.edgeColors },
     nodePadding: { ...base.nodePadding, ...theme.nodePadding },

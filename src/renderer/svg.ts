@@ -14,11 +14,13 @@ function colorsForShape(shape: string, theme: FloraTheme): NodeColorSet {
   if (shape === "diamond") return theme.shapeColors.diamond;
   if (shape === "stadium") return theme.shapeColors.stadium;
   if (shape === "rounded") return theme.shapeColors.rounded;
+  if (shape === "cylinder") return theme.shapeColors.cylinder;
+  if (shape === "queue") return theme.shapeColors.queue;
   return theme.nodeColors;
 }
 
 function gradKeyForShape(shape: string): string {
-  if (shape === "diamond" || shape === "stadium" || shape === "rounded") return shape;
+  if (shape === "diamond" || shape === "stadium" || shape === "rounded" || shape === "cylinder" || shape === "queue") return shape;
   return "default";
 }
 
@@ -32,6 +34,8 @@ function renderDefs(svg: SVGSVGElement, theme: FloraTheme, nodes: LayoutNode[]):
   if (usedShapes.has("diamond")) colorSets.push({ key: "diamond", colors: theme.shapeColors.diamond });
   if (usedShapes.has("stadium")) colorSets.push({ key: "stadium", colors: theme.shapeColors.stadium });
   if (usedShapes.has("rounded")) colorSets.push({ key: "rounded", colors: theme.shapeColors.rounded });
+  if (usedShapes.has("cylinder")) colorSets.push({ key: "cylinder", colors: theme.shapeColors.cylinder });
+  if (usedShapes.has("queue")) colorSets.push({ key: "queue", colors: theme.shapeColors.queue });
 
   for (const { key, colors } of colorSets) {
     const grad = el("linearGradient", { id: `flora-grad-${key}`, x1: "0", y1: "0", x2: "0", y2: "1" });
@@ -116,6 +120,73 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
         stroke: colors.stroke,
         "stroke-width": "2",
       });
+      break;
+    }
+    case "cylinder": {
+      const ry = 10;
+      const bodyTop = y + ry;
+      const bodyBottom = y + node.height - ry;
+      const d = [
+        `M ${x} ${bodyTop}`,
+        `A ${node.width / 2} ${ry} 0 0 1 ${x + node.width} ${bodyTop}`,
+        `L ${x + node.width} ${bodyBottom}`,
+        `A ${node.width / 2} ${ry} 0 0 1 ${x} ${bodyBottom}`,
+        `Z`,
+      ].join(" ");
+      const body = el("path", {
+        d,
+        fill: `url(#flora-grad-${gradKey})`,
+        stroke: colors.stroke,
+        "stroke-width": "2",
+      });
+      group.appendChild(body);
+      // Top ellipse drawn on top of the body
+      const topEllipse = el("ellipse", {
+        cx: node.x,
+        cy: bodyTop,
+        rx: node.width / 2,
+        ry,
+        fill: `url(#flora-grad-${gradKey})`,
+        stroke: colors.stroke,
+        "stroke-width": "2",
+      });
+      // Use topEllipse as the main shape element for class/filter/hover
+      shape = topEllipse;
+      // Set class on body too so highlighting works
+      body.setAttribute("class", "flora-node-shape");
+      break;
+    }
+    case "queue": {
+      const rx = 12;
+      const bodyLeft = x + rx;
+      const bodyRight = x + node.width - rx;
+      // Body: flat top/bottom with elliptical arcs on both sides
+      const d = [
+        `M ${bodyLeft} ${y}`,
+        `L ${bodyRight} ${y}`,
+        `A ${rx} ${node.height / 2} 0 0 1 ${bodyRight} ${y + node.height}`,
+        `L ${bodyLeft} ${y + node.height}`,
+        `A ${rx} ${node.height / 2} 0 0 1 ${bodyLeft} ${y}`,
+      ].join(" ");
+      const body = el("path", {
+        d,
+        fill: `url(#flora-grad-${gradKey})`,
+        stroke: colors.stroke,
+        "stroke-width": "2",
+      });
+      group.appendChild(body);
+      // Right ellipse drawn on top of the body to show the 3D face
+      const rightEllipse = el("ellipse", {
+        cx: bodyRight,
+        cy: node.y,
+        rx,
+        ry: node.height / 2,
+        fill: `url(#flora-grad-${gradKey})`,
+        stroke: colors.stroke,
+        "stroke-width": "2",
+      });
+      shape = rightEllipse;
+      body.setAttribute("class", "flora-node-shape");
       break;
     }
     case "stadium":
