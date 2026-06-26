@@ -5,7 +5,7 @@ interface Props {
 }
 
 const { title, description = "The fault-tolerant diagram library for AI applications. Mermaid-compatible syntax, beautiful interactive SVGs." } = Astro.props;
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <!doctype html>
