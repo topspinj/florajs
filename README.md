@@ -58,7 +58,56 @@ Parse input and return computed node/edge positions.
   interactive: true,
   onNodeClick: (nodeId) => console.log("clicked", nodeId),
   onNodeHover: (nodeId) => console.log("hovered", nodeId),
+  onHighlight: (nodeId, upstream, downstream) => console.log("lineage", nodeId),
 }
+```
+
+## Node Shapes
+
+| Shape | Syntax | Example |
+|-------|--------|---------|
+| Rectangle | `[text]` | `A[Start]` |
+| Rounded | `(text)` | `A(Process)` |
+| Diamond | `{text}` | `A{Decision}` |
+| Stadium | `([text])` | `A([Terminal])` |
+| Cylinder | `[(text)]` | `A[(Database)]` |
+| Queue | `[[text]]` | `A[[Kafka]]` |
+
+## Subgraphs
+
+Group nodes into collapsible subgraphs:
+
+```
+flowchart TD
+  subgraph Backend
+    API --> DB[(Database)]
+  end
+  subgraph Frontend
+    UI --> API
+  end
+```
+
+Subgraphs render with a dashed border and a label pill. Click the collapse button (−/+) to toggle — collapsed subgraphs are replaced by a single summary node showing the group name and node count.
+
+Nested subgraphs are supported.
+
+## Interactivity
+
+Flora diagrams are interactive by default:
+
+- **Zoom & pan** — scroll to zoom, drag to pan
+- **Hover** — nodes highlight on hover
+- **Lineage highlighting** — click any node to trace its upstream and downstream connections. Connected nodes and edges stay highlighted while everything else fades out. Click the node again, press Escape, or click the background to clear.
+
+```javascript
+render(input, element, {
+  interactive: true,
+  onNodeClick: (nodeId) => console.log("clicked", nodeId),
+  onNodeHover: (nodeId) => console.log("hovered", nodeId),
+  onHighlight: (nodeId, upstream, downstream) => {
+    console.log("lineage", { nodeId, upstream, downstream });
+  },
+});
 ```
 
 ## Supported Diagram Types
