@@ -21,6 +21,7 @@ export interface FlowchartSubgraph {
   id: string;
   label: string;
   nodeIds: string[];
+  parentId?: string;
 }
 
 export interface FlowchartAST {
@@ -41,6 +42,19 @@ export interface LayoutNode {
   height: number;
   label: string;
   shape: NodeShape;
+  subgraphSummary?: string;
+}
+
+export interface LayoutSubgraph {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  collapsed: boolean;
+  nodeCount: number;
+  parentId?: string;
 }
 
 export interface LayoutEdge {
@@ -54,6 +68,7 @@ export interface LayoutEdge {
 export interface LayoutResult {
   nodes: LayoutNode[];
   edges: LayoutEdge[];
+  subgraphs: LayoutSubgraph[];
   width: number;
   height: number;
 }
@@ -84,13 +99,21 @@ export interface FloraTheme {
   nodePadding: { x: number; y: number };
   edgeWidth: number;
   shadow: boolean;
+  subgraphColors: {
+    fill: string;
+    stroke: string;
+    label: string;
+  };
 }
 
+export type ThemePreset = "default" | "tufte" | "digital";
+
 export interface FloraOptions {
-  theme?: Partial<FloraTheme>;
+  theme?: ThemePreset | Partial<FloraTheme>;
   interactive?: boolean;
   onNodeClick?: (nodeId: string) => void;
   onNodeHover?: (nodeId: string | null) => void;
+  onSubgraphClick?: (subgraphId: string) => void;
 }
 
 export interface ParseWarning {

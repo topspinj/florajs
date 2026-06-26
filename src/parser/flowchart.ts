@@ -95,6 +95,41 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
     }
   }
 
+  function parseSubgraph(lineStartToken: Token, parentId?: string): void {
+    pos++; // skip "subgraph"
+    const id = current().value;
+    pos++;
+    skipNewlines();
+    const subgraphNodes: string[] = [];
+
+    while (
+      pos < tokens.length &&
+      !(current().type === "keyword" && current().value === "end")
+    ) {
+      if (current().type === "eof") {
+        warnings.push({
+          line: lineStartToken.line,
+          col: lineStartToken.col,
+          message: `Unterminated subgraph '${id}' (missing 'end')`,
+        });
+        break;
+      }
+      // Handle nested subgraphs
+      if (current().type === "keyword" && current().value === "subgraph") {
+        const nestedStart = current();
+        parseSubgraph(nestedStart, id);
+        continue;
+      }
+      if (current().type === "identifier") {
+        subgraphNodes.push(current().value);
+      }
+      pos++;
+    }
+    if (current().type === "keyword" && current().value === "end") pos++;
+
+    subgraphs.push({ id, label: id, nodeIds: subgraphNodes, parentId });
+  }
+
   if (current().type === "keyword" && (current().value === "flowchart" || current().value === "graph")) {
     pos++;
     skipNewlines();
@@ -112,32 +147,7 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
     const lineStartToken = current();
 
     if (current().type === "keyword" && current().value === "subgraph") {
-      pos++;
-      const id = current().value;
-      pos++;
-      skipNewlines();
-      const subgraphNodes: string[] = [];
-
-      while (
-        pos < tokens.length &&
-        !(current().type === "keyword" && current().value === "end")
-      ) {
-        if (current().type === "eof") {
-          warnings.push({
-            line: lineStartToken.line,
-            col: lineStartToken.col,
-            message: `Unterminated subgraph '${id}' (missing 'end')`,
-          });
-          break;
-        }
-        if (current().type === "identifier") {
-          subgraphNodes.push(current().value);
-        }
-        pos++;
-      }
-      if (current().type === "keyword" && current().value === "end") pos++;
-
-      subgraphs.push({ id, label: id, nodeIds: subgraphNodes });
+      parseSubgraph(lineStartToken);
       continue;
     }
 

@@ -2,6 +2,9 @@ import { parse } from "./parser/index.js";
 import { computeLayout } from "./layout/index.js";
 import { renderSVG } from "./renderer/index.js";
 import { defaultTheme } from "./themes/default.js";
+import { tufteTheme } from "./themes/tufte.js";
+import { digitalTheme } from "./themes/digital.js";
+import { resolveTheme } from "./themes/index.js";
 import type { FloraOptions, DiagramAST, LayoutResult, ParseWarning } from "./types.js";
 
 export interface RenderResult {
@@ -10,11 +13,26 @@ export interface RenderResult {
 
 export function render(input: string, target: HTMLElement, options: FloraOptions = {}): RenderResult {
   const { ast, warnings } = parse(input);
-  const layout = computeLayout(ast);
-  const svg = renderSVG(layout, options);
+  const theme = resolveTheme(options.theme);
+  const collapsedSubgraphs = new Set<string>();
 
-  target.innerHTML = "";
-  target.appendChild(svg);
+  function doRender(): void {
+    const layout = computeLayout(ast, theme, collapsedSubgraphs);
+    const svg = renderSVG(layout, options, (subgraphId) => {
+      if (collapsedSubgraphs.has(subgraphId)) {
+        collapsedSubgraphs.delete(subgraphId);
+      } else {
+        collapsedSubgraphs.add(subgraphId);
+      }
+      options.onSubgraphClick?.(subgraphId);
+      doRender();
+    });
+
+    target.innerHTML = "";
+    target.appendChild(svg);
+  }
+
+  doRender();
 
   return { warnings };
 }
@@ -40,6 +58,9 @@ export { parse } from "./parser/index.js";
 export { computeLayout } from "./layout/index.js";
 export { renderSVG } from "./renderer/index.js";
 export { defaultTheme } from "./themes/default.js";
+export { tufteTheme } from "./themes/tufte.js";
+export { digitalTheme } from "./themes/digital.js";
+export { resolveTheme, themes } from "./themes/index.js";
 export type {
   DiagramAST,
   DiagramType,
@@ -48,11 +69,14 @@ export type {
   FlowchartAST,
   FlowchartNode,
   FlowchartEdge,
+  FlowchartSubgraph,
   FlowchartDirection,
   NodeShape,
   LayoutResult,
   LayoutNode,
   LayoutEdge,
+  LayoutSubgraph,
   ParseWarning,
   ParseResult,
+  ThemePreset,
 } from "./types.js";
