@@ -8,6 +8,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
+    "@topspinj/flora": "file:..",
     "astro": "^5.0.0"
   }
 }

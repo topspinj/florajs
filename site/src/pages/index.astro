@@ -1,5 +1,12 @@
 ---
 import Layout from "../layouts/Layout.astro";
+
+const heroDefault = `flowchart LR
+  A[Prompt] --> B{Agent}
+  B -->|analyze| C(Think)
+  B -->|act| D[Execute]
+  C --> E([Result])
+  D --> E`;
 ---
 
 <Layout title="Flora — Fault-tolerant diagrams for AI">
@@ -20,63 +27,12 @@ import Layout from "../layouts/Layout.astro";
 
       <div class="hero-showcase">
         <div class="showcase-code">
-          <div class="panel-label panel-label-dark">Input</div>
-          <pre><code><span class="t-kw">flowchart</span> <span class="t-dir">LR</span>
-  A<span class="t-op">[</span><span class="t-str">Prompt</span><span class="t-op">]</span> <span class="t-op">--&gt;</span> B<span class="t-op">&#123;</span><span class="t-str">Agent</span><span class="t-op">&#125;</span>
-  B <span class="t-op">--&gt;|</span><span class="t-lbl">analyze</span><span class="t-op">|</span> C<span class="t-op">(</span><span class="t-str">Think</span><span class="t-op">)</span>
-  B <span class="t-op">--&gt;|</span><span class="t-lbl">act</span><span class="t-op">|</span> D<span class="t-op">[</span><span class="t-str">Execute</span><span class="t-op">]</span>
-  C <span class="t-op">--&gt;</span> E<span class="t-op">([</span><span class="t-str">Result</span><span class="t-op">])</span>
-  D <span class="t-op">--&gt;</span> E</code></pre>
+          <div class="panel-label panel-label-dark">Input <span class="edit-hint">← try editing</span></div>
+          <textarea id="hero-input" spellcheck="false" set:text={heroDefault}></textarea>
         </div>
         <div class="showcase-diagram">
           <div class="panel-label panel-label-light">Output</div>
-          <div class="diagram-frame">
-            <svg viewBox="0 0 760 260" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="hg-d" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#F7F8FE"/><stop offset="100%" stop-color="#EDF0FD"/>
-                </linearGradient>
-                <linearGradient id="hg-dm" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#FFF8F0"/><stop offset="100%" stop-color="#FFEFD9"/>
-                </linearGradient>
-                <linearGradient id="hg-r" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#F5F0FF"/><stop offset="100%" stop-color="#EBE0FF"/>
-                </linearGradient>
-                <linearGradient id="hg-s" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#F0FAF6"/><stop offset="100%" stop-color="#DFFAEE"/>
-                </linearGradient>
-                <marker id="ha" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto" markerUnits="userSpaceOnUse">
-                  <path d="M 1 1 L 10 4 L 1 7" fill="none" stroke="#0D32B2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </marker>
-              </defs>
-              <!-- Edges -->
-              <path d="M 180 130 L 234 130" stroke="#0D32B2" stroke-width="2" stroke-linecap="round" marker-end="url(#ha)"/>
-              <path d="M 346 130 C 390 130, 390 68, 405 68" stroke="#0D32B2" stroke-width="2" stroke-linecap="round" fill="none" marker-end="url(#ha)"/>
-              <path d="M 346 130 C 390 130, 390 192, 400 192" stroke="#0D32B2" stroke-width="2" stroke-linecap="round" fill="none" marker-end="url(#ha)"/>
-              <path d="M 515 68 C 548 68, 553 125, 570 125" stroke="#0D32B2" stroke-width="2" stroke-linecap="round" fill="none" marker-end="url(#ha)"/>
-              <path d="M 520 192 C 548 192, 553 135, 570 135" stroke="#0D32B2" stroke-width="2" stroke-linecap="round" fill="none" marker-end="url(#ha)"/>
-              <!-- Edge labels -->
-              <rect x="344" y="92" width="62" height="22" rx="4" fill="#F7F8FE" stroke="#0D32B2" stroke-width="1"/>
-              <text x="375" y="104" text-anchor="middle" dominant-baseline="central" fill="#676C7E" font-family="Inter, sans-serif" font-size="13">analyze</text>
-              <rect x="358" y="146" width="34" height="22" rx="4" fill="#F7F8FE" stroke="#0D32B2" stroke-width="1"/>
-              <text x="375" y="158" text-anchor="middle" dominant-baseline="central" fill="#676C7E" font-family="Inter, sans-serif" font-size="13">act</text>
-              <!-- Node A: Prompt -->
-              <rect x="60" y="107" width="120" height="46" rx="4" fill="url(#hg-d)" stroke="#0D32B2" stroke-width="2"/>
-              <text x="120" y="131" text-anchor="middle" dominant-baseline="central" fill="#0A0F25" font-family="Inter, sans-serif" font-size="15">Prompt</text>
-              <!-- Node B: Agent (diamond) -->
-              <polygon points="290,90 346,130 290,170 234,130" fill="url(#hg-dm)" stroke="#C77A20" stroke-width="2" stroke-linejoin="round"/>
-              <text x="290" y="131" text-anchor="middle" dominant-baseline="central" fill="#0A0F25" font-family="Inter, sans-serif" font-size="15">Agent</text>
-              <!-- Node C: Think (rounded) -->
-              <rect x="405" y="45" width="110" height="46" rx="12" fill="url(#hg-r)" stroke="#6B3FA0" stroke-width="2"/>
-              <text x="460" y="69" text-anchor="middle" dominant-baseline="central" fill="#0A0F25" font-family="Inter, sans-serif" font-size="15">Think</text>
-              <!-- Node D: Execute -->
-              <rect x="400" y="169" width="120" height="46" rx="4" fill="url(#hg-d)" stroke="#0D32B2" stroke-width="2"/>
-              <text x="460" y="193" text-anchor="middle" dominant-baseline="central" fill="#0A0F25" font-family="Inter, sans-serif" font-size="15">Execute</text>
-              <!-- Node E: Result (stadium) -->
-              <rect x="570" y="107" width="120" height="46" rx="23" fill="url(#hg-s)" stroke="#1A7F5A" stroke-width="2"/>
-              <text x="630" y="131" text-anchor="middle" dominant-baseline="central" fill="#0A0F25" font-family="Inter, sans-serif" font-size="15">Result</text>
-            </svg>
-          </div>
+          <div class="diagram-frame" id="hero-diagram"></div>
         </div>
       </div>
     </div>
@@ -154,6 +110,21 @@ import Layout from "../layouts/Layout.astro";
             Ships as ESM and CJS with full TypeScript types.
           </p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lineage Highlighting -->
+  <section class="lineage-demo">
+    <div class="container">
+      <h2>Lineage Highlighting</h2>
+      <p class="section-sub">
+        Click any node to trace its upstream and downstream dependencies.
+        Everything else fades away &mdash; perfect for data pipelines and dependency graphs.
+      </p>
+      <div class="lineage-showcase">
+        <div class="lineage-frame" id="lineage-diagram"></div>
+        <p class="lineage-hint">Click a node to trace its lineage</p>
       </div>
     </div>
   </section>
@@ -242,8 +213,45 @@ import Layout from "../layouts/Layout.astro";
   </section>
 </Layout>
 
+<script>
+  import { render } from "@topspinj/flora";
+
+  // Hero playground — live render on edit
+  const heroInput = document.getElementById("hero-input") as HTMLTextAreaElement;
+  const heroDiagram = document.getElementById("hero-diagram")!;
+
+  function renderHero() {
+    heroDiagram.innerHTML = "";
+    render(heroInput.value, heroDiagram, { interactive: true });
+  }
+
+  let heroTimeout: ReturnType<typeof setTimeout>;
+  heroInput.addEventListener("input", () => {
+    clearTimeout(heroTimeout);
+    heroTimeout = setTimeout(renderHero, 300);
+  });
+  renderHero();
+
+  // Lineage demo
+  const lineageDiagram = document.getElementById("lineage-diagram")!;
+  render(`flowchart TD
+  src[(Source DB)] --> raw[(Raw Events)]
+  raw --> stg_orders[Staging Orders]
+  raw --> stg_customers[Staging Customers]
+  raw --> stg_payments[Staging Payments]
+  stg_orders --> fct_orders[Fact Orders]
+  stg_customers --> dim_customers[Dim Customers]
+  stg_payments --> fct_orders
+  fct_orders --> mart_revenue[Revenue Mart]
+  dim_customers --> mart_revenue
+  fct_orders --> mart_ops[Ops Mart]
+  mart_revenue --> dashboard([Dashboard])
+  mart_ops --> alerts{Alerts}`, lineageDiagram, { interactive: true });
+</script>
+
 <style>
   /* Hero */
+
   .hero {
     padding: 80px 24px 64px;
     background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(13, 50, 178, 0.04) 0%, transparent 70%);
@@ -364,12 +372,31 @@ import Layout from "../layouts/Layout.astro";
 
   .showcase-code {
     background: var(--color-code-bg);
+    display: flex;
+    flex-direction: column;
   }
 
-  .showcase-code pre {
-    border-radius: 0;
+  .showcase-code textarea {
+    flex: 1;
+    resize: none;
+    border: none;
+    outline: none;
     padding: 20px 24px;
-    margin: 0;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #cdd6f4;
+    background: transparent;
+    tab-size: 2;
+    min-height: 180px;
+  }
+
+  .edit-hint {
+    font-weight: 400;
+    opacity: 0.5;
+    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
   }
 
   .showcase-diagram {
@@ -382,9 +409,10 @@ import Layout from "../layouts/Layout.astro";
     display: flex;
     align-items: center;
     justify-content: center;
+    min-height: 200px;
   }
 
-  .diagram-frame svg {
+  .diagram-frame :global(svg) {
     width: 100%;
     height: auto;
   }
@@ -611,6 +639,50 @@ import Layout from "../layouts/Layout.astro";
     font-size: 14px;
     color: var(--color-text-secondary);
     line-height: 1.55;
+  }
+
+  /* Lineage Demo */
+  .lineage-demo {
+    padding: 96px 24px;
+  }
+
+  .lineage-demo h2 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .lineage-showcase {
+    max-width: 800px;
+    margin: 0 auto;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.06),
+      0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .lineage-frame {
+    min-height: 420px;
+    padding: 24px;
+  }
+
+  .lineage-frame :global(svg) {
+    width: 100%;
+    height: auto;
+  }
+
+  .lineage-hint {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: 12px;
+    border-top: 1px solid var(--color-border);
+    background: #fafbfc;
   }
 
   /* Responsive */
