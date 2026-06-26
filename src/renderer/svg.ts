@@ -870,10 +870,10 @@ export function renderSVG(
       pointer-events: none;
     }
     .flora-highlighted-source .flora-node-shape {
-      stroke-width: 4;
+      stroke-width: ${theme.nodeStrokeWidth + 2};
     }
     .flora-highlighted-edge path {
-      stroke-width: 2.5;
+      stroke-width: ${theme.edgeWidth + 1};
     }
   `;
   svg.appendChild(style);
