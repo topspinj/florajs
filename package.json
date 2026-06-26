@@ -1,5 +1,5 @@
 {
-  "name": "florajs",
+  "name": "@topspinj/flora",
   "version": "0.1.0",
   "description": "Beautiful, interactive diagrams from Mermaid-compatible syntax",
   "type": "module",

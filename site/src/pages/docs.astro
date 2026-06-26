@@ -53,13 +53,13 @@ const base = import.meta.env.BASE_URL;
         </p>
 
         <h2>Installation</h2>
-        <pre><code>npm install florajs</code></pre>
+        <pre><code>npm install @topspinj/flora</code></pre>
         <p>Flora ships as ESM and CJS with full TypeScript types. One dependency (<code>dagre</code> for layout).</p>
       </section>
 
       <section id="quick-start">
         <h2>Quick Start</h2>
-        <pre><code><span class="t-kw">import</span> &#123; render &#125; <span class="t-kw">from</span> <span class="t-str">"florajs"</span>;
+        <pre><code><span class="t-kw">import</span> &#123; render &#125; <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora"</span>;
 
 <span class="t-kw">const</span> &#123; warnings &#125; = <span class="t-fn">render</span>(
   <span class="t-str">`flowchart LR
@@ -255,7 +255,7 @@ npx serve .
 ): &#123; warnings: <span class="t-kw">ParseWarning</span>[] &#125;</code></pre>
         </div>
         <p>This is the primary API. It handles the full pipeline and attaches an interactive SVG to the target element. Subgraph collapse/expand is wired up automatically.</p>
-        <pre><code><span class="t-kw">import</span> &#123; render &#125; <span class="t-kw">from</span> <span class="t-str">"florajs"</span>;
+        <pre><code><span class="t-kw">import</span> &#123; render &#125; <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora"</span>;
 
 <span class="t-kw">const</span> &#123; warnings &#125; = <span class="t-fn">render</span>(<span class="t-str">`flowchart LR
   A --&gt; B --&gt; C`</span>, document.<span class="t-fn">getElementById</span>(<span class="t-str">"el"</span>));

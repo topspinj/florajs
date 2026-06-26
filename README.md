@@ -7,13 +7,13 @@ Flora takes the text-to-diagram syntax you already know from Mermaid and produce
 ## Install
 
 ```bash
-npm install florajs
+npm install @topspinj/flora
 ```
 
 ## Usage
 
 ```javascript
-import { render } from "florajs";
+import { render } from "@topspinj/flora";
 
 render(
   `flowchart LR
