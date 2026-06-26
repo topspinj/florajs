@@ -40,6 +40,54 @@ export function toSVGElement(input: string, options: FloraOptions = {}): { svg: 
   return { svg, warnings };
 }
 
+export interface ToPNGOptions extends FloraOptions {
+  scale?: number;
+}
+
+export async function toPNG(input: string, options: ToPNGOptions = {}): Promise<Blob> {
+  const { svg, warnings: _ } = toSVGElement(input, options);
+  const scale = options.scale ?? 2;
+
+  // Read the viewBox to get the intrinsic dimensions
+  const vb = svg.getAttribute("viewBox")?.split(" ").map(Number) ?? [0, 0, 800, 600];
+  const width = vb[2];
+  const height = vb[3];
+
+  // Set explicit pixel dimensions so the serialized SVG rasterizes at the right size
+  svg.setAttribute("width", String(width * scale));
+  svg.setAttribute("height", String(height * scale));
+
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svg);
+  const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const img = new Image();
+  img.width = width * scale;
+  img.height = height * scale;
+
+  const loaded = new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("Failed to load SVG as image"));
+  });
+  img.src = url;
+  await loaded;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, 0, 0);
+  URL.revokeObjectURL(url);
+
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((b) => {
+      if (b) resolve(b);
+      else reject(new Error("Canvas toBlob failed"));
+    }, "image/png");
+  });
+}
+
 export { parse } from "./parser/index.js";
 export { computeLayout } from "./layout/index.js";
 export { renderSVG } from "./renderer/index.js";

@@ -51,6 +51,7 @@ export const digitalTheme: FloraTheme = {
   nodeRadius: 2,
   nodePadding: { x: 24, y: 14 },
   edgeWidth: 1.5,
+  nodeStrokeWidth: 2,
   shadow: false,
   handDrawn: false,
   subgraphColors: {

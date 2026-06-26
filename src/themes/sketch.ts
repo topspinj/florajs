@@ -45,11 +45,12 @@ export const sketchTheme: FloraTheme = {
     label: "#1e1e1e",
     labelBackground: "#FFFFFF",
   },
-  fontFamily: '"Virgil", "Caveat", "Segoe Print", cursive',
+  fontFamily: '"Comic Neue", "Comic Sans MS", "Bradley Hand", cursive',
   fontSize: 20,
   nodeRadius: 6,
   nodePadding: { x: 30, y: 18 },
   edgeWidth: 2,
+  nodeStrokeWidth: 2,
   shadow: false,
   handDrawn: true,
   subgraphColors: {

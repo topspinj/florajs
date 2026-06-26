@@ -98,6 +98,7 @@ export interface FloraTheme {
   nodeRadius: number;
   nodePadding: { x: number; y: number };
   edgeWidth: number;
+  nodeStrokeWidth: number;
   shadow: boolean;
   handDrawn: boolean;
   subgraphColors: {

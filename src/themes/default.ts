@@ -51,6 +51,7 @@ export const defaultTheme: FloraTheme = {
   nodeRadius: 6,
   nodePadding: { x: 28, y: 16 },
   edgeWidth: 1.8,
+  nodeStrokeWidth: 2,
   shadow: true,
   handDrawn: false,
   subgraphColors: {
