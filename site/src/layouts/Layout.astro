@@ -23,12 +23,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <nav class="nav">
       <div class="nav-inner">
         <a href={base} class="nav-logo">
-          <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <rect x="1" y="1" width="8" height="8" rx="2" fill="#0D32B2"/>
-            <rect x="11" y="1" width="8" height="8" rx="2" fill="#6B3FA0"/>
-            <rect x="1" y="11" width="8" height="8" rx="2" fill="#C77A20"/>
-            <rect x="11" y="11" width="8" height="8" rx="2" fill="#1A7F5A"/>
-          </svg>
+          <img class="nav-icon" src={`${base}/logo.png`} alt="Flora logo" width="24" height="24" />
           Flora
         </a>
         <div class="nav-links">
