@@ -29,6 +29,14 @@ function inferShape(tokens: Token[], start: number): { shape: NodeShape; label: 
     const textToken = tokens[start + 1];
     return { shape: "stadium", label: textToken?.value ?? "" };
   }
+  if (token.type === "open_cylinder") {
+    const textToken = tokens[start + 1];
+    return { shape: "cylinder", label: textToken?.value ?? "" };
+  }
+  if (token.type === "open_queue") {
+    const textToken = tokens[start + 1];
+    return { shape: "queue", label: textToken?.value ?? "" };
+  }
   return null;
 }
 
@@ -83,7 +91,9 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
           tokens[pos]!.type === "close_bracket" ||
           tokens[pos]!.type === "close_paren" ||
           tokens[pos]!.type === "close_brace" ||
-          tokens[pos]!.type === "close_stadium"
+          tokens[pos]!.type === "close_stadium" ||
+          tokens[pos]!.type === "close_cylinder" ||
+          tokens[pos]!.type === "close_queue"
         ) {
           pos++;
           break;

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flora — Playground</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: #f8f9fb;
+      color: #0A0F25;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      border-bottom: 1px solid #e2e4ea;
+      background: white;
+    }
+    .toolbar h1 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .editor-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .editor-controls label {
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.5);
+    }
+    .editor-controls select {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      color: #cdd6f4;
+      cursor: pointer;
+    }
+    .editor-controls select option {
+      background: #1e1e2e;
+      color: #cdd6f4;
+    }
+    .editor-controls button {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 16px;
+      border-radius: 5px;
+      border: none;
+      background: #7c3aed;
+      color: white;
+      cursor: pointer;
+    }
+    .editor-controls button:hover { background: #6d28d9; }
+    .split {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+    .editor-pane {
+      width: 40%;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #e2e4ea;
+      background: #1e1e2e;
+    }
+    .editor-pane .pane-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(255,255,255,0.35);
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    textarea {
+      flex: 1;
+      resize: none;
+      border: none;
+      outline: none;
+      padding: 16px;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #cdd6f4;
+      background: transparent;
+      tab-size: 2;
+    }
+    .preview-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: white;
+    }
+    .preview-pane .pane-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #9ca3af;
+      padding: 10px 16px;
+      border-bottom: 1px solid #e2e4ea;
+      display: flex;
+      align-items: center;
+    }
+    .preview-controls {
+      margin-left: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview-controls label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #9ca3af;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+    .preview-controls select {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid #e2e4ea;
+      background: white;
+      color: #374151;
+      cursor: pointer;
+    }
+    #diagram {
+      flex: 1;
+      overflow: hidden;
+    }
+    .hint {
+      font-size: 12px;
+      color: #9ca3af;
+      padding: 8px 16px;
+      border-top: 1px solid #e2e4ea;
+      background: #fafbfc;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1>🛝 Flora Playground</h1>
+  </div>
+  <div class="split">
+    <div class="editor-pane">
+      <div class="editor-controls">
+        <button id="render-btn">Render</button>
+      </div>
+      <textarea id="input" spellcheck="false">flowchart TD
+  src[Data Source] --> raw[Raw Table]
+  raw --> stg_orders[Staging Orders]
+  raw --> stg_customers[Staging Customers]
+  raw --> stg_payments[Staging Payments]
+  stg_orders --> fct_orders[Fact Orders]
+  stg_customers --> dim_customers[Dim Customers]
+  stg_payments --> fct_orders
+  fct_orders --> mart_revenue[Revenue Mart]
+  dim_customers --> mart_revenue
+  fct_orders --> mart_ops[Ops Mart]
+  mart_revenue --> dashboard[Dashboard]
+  mart_ops --> alerts{Alerts}
+  dim_customers --> report([Customer Report])</textarea>
+    </div>
+    <div class="preview-pane">
+      <div class="pane-label">
+        <span class="preview-controls">
+          <label for="theme">Theme</label>
+          <select id="theme">
+            <option value="default">Default</option>
+            <option value="tufte">Tufte</option>
+            <option value="digital">Digital</option>
+          </select>
+        </span>
+      </div>
+      <div id="diagram"></div>
+      <div class="hint">Click a node to highlight its lineage. Click background or press Escape to clear.</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { render } from "./dist/index.js";
+
+    const input = document.getElementById("input");
+    const themeSelect = document.getElementById("theme");
+    const renderBtn = document.getElementById("render-btn");
+    const diagram = document.getElementById("diagram");
+
+    function doRender() {
+      diagram.innerHTML = "";
+      render(input.value, diagram, {
+        theme: themeSelect.value,
+        interactive: true,
+        onHighlight: (nodeId, upstream, downstream) => {
+          console.log("Highlighted:", nodeId, "| Upstream:", upstream, "| Downstream:", downstream);
+        }
+      });
+    }
+
+    renderBtn.addEventListener("click", doRender);
+
+    // Ctrl/Cmd+Enter to render
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        doRender();
+      }
+    });
+
+    // Render on theme change
+    themeSelect.addEventListener("change", doRender);
+
+    // Initial render
+    doRender();
+  </script>
+</body>
+</html>

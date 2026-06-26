@@ -2,7 +2,7 @@ export type DiagramType = "flowchart" | "erd";
 
 export type FlowchartDirection = "TB" | "TD" | "BT" | "LR" | "RL";
 
-export type NodeShape = "rect" | "rounded" | "diamond" | "circle" | "stadium";
+export type NodeShape = "rect" | "rounded" | "diamond" | "circle" | "stadium" | "cylinder" | "queue";
 
 export interface FlowchartNode {
   id: string;
@@ -87,6 +87,8 @@ export interface FloraTheme {
     diamond: NodeColorSet;
     stadium: NodeColorSet;
     rounded: NodeColorSet;
+    cylinder: NodeColorSet;
+    queue: NodeColorSet;
   };
   edgeColors: {
     stroke: string;
@@ -114,6 +116,7 @@ export interface FloraOptions {
   onNodeClick?: (nodeId: string) => void;
   onNodeHover?: (nodeId: string | null) => void;
   onSubgraphClick?: (subgraphId: string) => void;
+  onHighlight?: (nodeId: string, upstream: string[], downstream: string[]) => void;
 }
 
 export interface ParseWarning {

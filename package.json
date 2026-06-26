@@ -21,7 +21,8 @@
     "dev": "tsup --watch",
     "test": "vitest",
     "test:run": "vitest run",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "playground": "tsup && open http://localhost:3333/playground.html && python3 -m http.server 3333"
   },
   "keywords": [
     "diagrams",

@@ -27,6 +27,18 @@ export const digitalTheme: FloraTheme = {
       stroke: "#A78BFA",
       text: "#F1F5F9",
     },
+    cylinder: {
+      fill: "#1E293B",
+      fillGradientEnd: "#1E293B",
+      stroke: "#60A5FA",
+      text: "#F1F5F9",
+    },
+    queue: {
+      fill: "#1E293B",
+      fillGradientEnd: "#1E293B",
+      stroke: "#F87171",
+      text: "#F1F5F9",
+    },
   },
   edgeColors: {
     stroke: "#38BDF8",

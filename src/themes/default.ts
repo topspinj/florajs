@@ -27,6 +27,18 @@ export const defaultTheme: FloraTheme = {
       stroke: "#6B3FA0",
       text: "#0A0F25",
     },
+    cylinder: {
+      fill: "#F0F4FF",
+      fillGradientEnd: "#E0EAFF",
+      stroke: "#2563EB",
+      text: "#0A0F25",
+    },
+    queue: {
+      fill: "#FFF5F5",
+      fillGradientEnd: "#FFE8E8",
+      stroke: "#DC2626",
+      text: "#0A0F25",
+    },
   },
   edgeColors: {
     stroke: "#0D32B2",

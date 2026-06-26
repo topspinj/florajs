@@ -27,6 +27,18 @@ export const tufteTheme: FloraTheme = {
       stroke: "#444444",
       text: "#111111",
     },
+    cylinder: {
+      fill: "#FFFFF8",
+      fillGradientEnd: "#FFFFF8",
+      stroke: "#2B5797",
+      text: "#111111",
+    },
+    queue: {
+      fill: "#FFFFF8",
+      fillGradientEnd: "#FFFFF8",
+      stroke: "#8B0000",
+      text: "#111111",
+    },
   },
   edgeColors: {
     stroke: "#333333",

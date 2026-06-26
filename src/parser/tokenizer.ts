@@ -17,6 +17,10 @@ export type TokenType =
   | "close_diamond"
   | "open_stadium"
   | "close_stadium"
+  | "open_cylinder"
+  | "close_cylinder"
+  | "open_queue"
+  | "close_queue"
   | "newline"
   | "eof";
 
@@ -188,10 +192,26 @@ export function tokenize(input: string): TokenizeResult {
 
     if (ch === "[") {
       advance();
-      const text = readBracketedText("]");
-      tokens.push({ type: "open_bracket", value: "[", line: startLine, col: startCol });
-      tokens.push({ type: "text", value: text, line: startLine, col: startCol + 1 });
-      tokens.push({ type: "close_bracket", value: "]", line: startLine, col: col });
+      if (peek() === "[") {
+        advance();
+        const text = readBracketedText("]");
+        if (peek() === "]") advance();
+        tokens.push({ type: "open_queue", value: "[[", line: startLine, col: startCol });
+        tokens.push({ type: "text", value: text, line: startLine, col: startCol + 2 });
+        tokens.push({ type: "close_queue", value: "]]", line: startLine, col: col });
+      } else if (peek() === "(") {
+        advance();
+        const text = readBracketedText(")");
+        if (peek() === "]") advance();
+        tokens.push({ type: "open_cylinder", value: "[(", line: startLine, col: startCol });
+        tokens.push({ type: "text", value: text, line: startLine, col: startCol + 2 });
+        tokens.push({ type: "close_cylinder", value: ")]", line: startLine, col: col });
+      } else {
+        const text = readBracketedText("]");
+        tokens.push({ type: "open_bracket", value: "[", line: startLine, col: startCol });
+        tokens.push({ type: "text", value: text, line: startLine, col: startCol + 1 });
+        tokens.push({ type: "close_bracket", value: "]", line: startLine, col: col });
+      }
       continue;
     }
 
