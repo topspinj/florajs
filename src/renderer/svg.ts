@@ -773,7 +773,7 @@ function renderSubgraph(sg: LayoutSubgraph, theme: FloraTheme): SVGGElement {
 // Zoom / pan
 // ---------------------------------------------------------------------------
 
-function addZoomPan(svg: SVGSVGElement, content: SVGGElement): void {
+function addZoomPan(svg: SVGSVGElement, content: SVGGElement, isLocked: () => boolean): void {
   let scale = 1;
   let translateX = 0;
   let translateY = 0;
@@ -794,6 +794,7 @@ function addZoomPan(svg: SVGSVGElement, content: SVGGElement): void {
 
   svg.addEventListener("wheel", (e) => {
     e.preventDefault();
+    if (isLocked()) return;
     const vbScale = getViewBoxScale();
     const rect = svg.getBoundingClientRect();
     const mouseX = (e.clientX - rect.left) * vbScale;
@@ -807,7 +808,7 @@ function addZoomPan(svg: SVGSVGElement, content: SVGGElement): void {
   });
 
   svg.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || isLocked()) return;
     isPanning = true;
     lastX = e.clientX;
     lastY = e.clientY;
@@ -969,7 +970,7 @@ export function renderSVG(
     });
     svg.setAttribute("tabindex", "0");
 
-    addZoomPan(svg, content);
+    addZoomPan(svg, content, () => highlightedNodeId !== null);
   }
 
   return svg;
