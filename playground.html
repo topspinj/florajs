@@ -70,10 +70,21 @@
     }
     .editor-pane {
       width: 40%;
+      min-width: 200px;
       display: flex;
       flex-direction: column;
-      border-right: 1px solid #e2e4ea;
       background: #1e1e2e;
+    }
+    .resize-handle {
+      width: 5px;
+      cursor: col-resize;
+      background: #e2e4ea;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .resize-handle:hover,
+    .resize-handle.active {
+      background: #7c3aed;
     }
     .editor-pane .pane-label {
       font-size: 12px;
@@ -99,6 +110,7 @@
     }
     .preview-pane {
       flex: 1;
+      min-width: 200px;
       display: flex;
       flex-direction: column;
       background: white;
@@ -160,7 +172,7 @@
         <button id="render-btn">Render</button>
       </div>
       <textarea id="input" spellcheck="false">flowchart TD
-  src[Data Source] --> raw[Raw Table]
+  src[Data Source] --> raw[(Raw Table)]
   raw --> stg_orders[Staging Orders]
   raw --> stg_customers[Staging Customers]
   raw --> stg_payments[Staging Payments]
@@ -174,6 +186,7 @@
   mart_ops --> alerts{Alerts}
   dim_customers --> report([Customer Report])</textarea>
     </div>
+    <div class="resize-handle" id="resize-handle"></div>
     <div class="preview-pane">
       <div class="pane-label">
         <span class="preview-controls">
@@ -224,6 +237,37 @@
 
     // Initial render
     doRender();
+
+    // Resizable panes
+    const handle = document.getElementById("resize-handle");
+    const editorPane = document.querySelector(".editor-pane");
+    const split = document.querySelector(".split");
+    let dragging = false;
+
+    handle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      dragging = true;
+      handle.classList.add("active");
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!dragging) return;
+      const splitRect = split.getBoundingClientRect();
+      const newWidth = e.clientX - splitRect.left;
+      const minW = 200;
+      const maxW = splitRect.width - 200;
+      editorPane.style.width = Math.max(minW, Math.min(maxW, newWidth)) + "px";
+    });
+
+    window.addEventListener("mouseup", () => {
+      if (!dragging) return;
+      dragging = false;
+      handle.classList.remove("active");
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    });
   </script>
 </body>
 </html>

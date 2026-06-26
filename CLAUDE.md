@@ -48,6 +48,7 @@ fix/edge-label-overlap
 - `src/renderer/` — SVG rendering with interactivity (zoom, pan, hover, click)
 - `src/themes/` — Theme definitions (default, tufte, digital)
 - `src/types.ts` — All shared TypeScript types
+- `playground.html` — Browser-based playground for testing diagrams (run `npx serve .` and open `/playground.html`)
 
 ## Commands
 
@@ -56,3 +57,4 @@ fix/edge-label-overlap
 - `npm run test` — Run tests with vitest (watch mode)
 - `npm run test:run` — Run tests once
 - `npm run lint` — Type-check with tsc
+- `npx serve .` — Serve locally for playground (open `/playground.html`)

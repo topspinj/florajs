@@ -1,0 +1,788 @@
+---
+import Layout from "../layouts/Layout.astro";
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout title="Flora — Docs">
+  <div class="docs-layout">
+    <aside class="sidebar">
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <h3>Getting Started</h3>
+          <a href="#installation">Installation</a>
+          <a href="#quick-start">Quick Start</a>
+          <a href="#playground">Playground</a>
+        </div>
+        <div class="sidebar-section">
+          <h3>Syntax</h3>
+          <a href="#nodes">Nodes &amp; Shapes</a>
+          <a href="#edges">Edges</a>
+          <a href="#directions">Directions</a>
+          <a href="#subgraphs">Subgraphs</a>
+        </div>
+        <div class="sidebar-section">
+          <h3>API Reference</h3>
+          <a href="#render">render()</a>
+          <a href="#tosvgelement">toSVGElement()</a>
+          <a href="#toast">toAST()</a>
+          <a href="#tolayout">toLayout()</a>
+          <a href="#options">Options</a>
+        </div>
+        <div class="sidebar-section">
+          <h3>Theming</h3>
+          <a href="#theme-presets">Presets</a>
+          <a href="#custom-themes">Custom Themes</a>
+          <a href="#theme-reference">Theme Reference</a>
+        </div>
+        <div class="sidebar-section">
+          <h3>Advanced</h3>
+          <a href="#fault-tolerance">Fault Tolerance</a>
+          <a href="#interactivity">Interactivity</a>
+          <a href="#lineage">Lineage Highlighting</a>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="docs-content">
+      <!-- Getting Started -->
+      <section id="installation">
+        <h1>Documentation</h1>
+        <p class="lead">
+          Flora is a fault-tolerant, Mermaid-compatible diagram library that renders beautiful, interactive SVGs.
+          It never throws on bad input &mdash; it renders what it can and returns structured warnings for the rest.
+        </p>
+
+        <h2>Installation</h2>
+        <pre><code>npm install florajs</code></pre>
+        <p>Flora ships as ESM and CJS with full TypeScript types. One dependency (<code>dagre</code> for layout).</p>
+      </section>
+
+      <section id="quick-start">
+        <h2>Quick Start</h2>
+        <pre><code><span class="t-kw">import</span> &#123; render &#125; <span class="t-kw">from</span> <span class="t-str">"florajs"</span>;
+
+<span class="t-kw">const</span> &#123; warnings &#125; = <span class="t-fn">render</span>(
+  <span class="t-str">`flowchart LR
+    A[Start] --&gt; B&#123;Decision&#125;
+    B --&gt;|Yes| C[Do thing]
+    B --&gt;|No| D[Other thing]`</span>,
+  document.<span class="t-fn">getElementById</span>(<span class="t-str">"diagram"</span>),
+  &#123; interactive: <span class="t-kw">true</span> &#125;
+);
+
+<span class="t-cmt">// warnings is an array of &#123; line, col, message &#125;</span></code></pre>
+        <p>
+          The <code>render()</code> function parses the input, computes layout, and appends an interactive SVG to the target element.
+          It returns any parse warnings so you can surface them in your UI.
+        </p>
+      </section>
+
+      <section id="playground">
+        <h2>Playground</h2>
+        <p>
+          The easiest way to experiment with Flora is the <strong>playground</strong> &mdash;
+          a browser-based editor with live rendering, theme switching, and lineage highlighting.
+        </p>
+        <pre><code><span class="t-cmt"># Clone the repo and run locally</span>
+git clone https://github.com/topspinj/florajs.git
+<span class="t-kw">cd</span> florajs
+npm install &amp;&amp; npm run build
+npx serve .
+<span class="t-cmt"># Open http://localhost:3000/playground.html</span></code></pre>
+      </section>
+
+      <!-- Syntax -->
+      <section id="nodes">
+        <h2>Nodes &amp; Shapes</h2>
+        <p>
+          Define nodes with an ID followed by a shape delimiter. If no shape is specified, the node is a plain rectangle
+          labeled with its ID.
+        </p>
+
+        <div class="shape-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Shape</th>
+                <th>Syntax</th>
+                <th>Example</th>
+                <th>Use case</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Rectangle</td>
+                <td><code>[label]</code></td>
+                <td><code>A[My Service]</code></td>
+                <td>Default / processes</td>
+              </tr>
+              <tr>
+                <td>Rounded</td>
+                <td><code>(label)</code></td>
+                <td><code>B(Cache)</code></td>
+                <td>Intermediate steps</td>
+              </tr>
+              <tr>
+                <td>Diamond</td>
+                <td><code>&#123;label&#125;</code></td>
+                <td><code>C&#123;Decision&#125;</code></td>
+                <td>Conditionals / routing</td>
+              </tr>
+              <tr>
+                <td>Stadium</td>
+                <td><code>([label])</code></td>
+                <td><code>D([Result])</code></td>
+                <td>Terminals / outputs</td>
+              </tr>
+              <tr>
+                <td>Cylinder</td>
+                <td><code>[(label)]</code></td>
+                <td><code>E[(Database)]</code></td>
+                <td>Databases / Kafka / storage</td>
+              </tr>
+              <tr>
+                <td>Queue</td>
+                <td><code>[[label]]</code></td>
+                <td><code>F[[Queue]]</code></td>
+                <td>Message queues / buffers</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <pre><code><span class="t-kw">flowchart</span> <span class="t-dir">LR</span>
+  A<span class="t-op">[</span><span class="t-str">Service</span><span class="t-op">]</span> <span class="t-op">--&gt;</span> B<span class="t-op">(</span><span class="t-str">Cache</span><span class="t-op">)</span>
+  B <span class="t-op">--&gt;</span> C<span class="t-op">&#123;</span><span class="t-str">Route?</span><span class="t-op">&#125;</span>
+  C <span class="t-op">--&gt;</span> D<span class="t-op">([</span><span class="t-str">Result</span><span class="t-op">])</span>
+  C <span class="t-op">--&gt;</span> E<span class="t-op">[(</span><span class="t-str">Postgres</span><span class="t-op">)]</span>
+  C <span class="t-op">--&gt;</span> F<span class="t-op">[[</span><span class="t-str">SQS</span><span class="t-op">]]</span></code></pre>
+      </section>
+
+      <section id="edges">
+        <h2>Edges</h2>
+        <p>Three edge styles are supported:</p>
+
+        <div class="shape-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Style</th>
+                <th>Syntax</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Solid</td>
+                <td><code>--&gt;</code></td>
+                <td><code>A --&gt; B</code></td>
+              </tr>
+              <tr>
+                <td>Dotted</td>
+                <td><code>-.-&gt;</code></td>
+                <td><code>A -.-&gt; B</code></td>
+              </tr>
+              <tr>
+                <td>Thick</td>
+                <td><code>==&gt;</code></td>
+                <td><code>A ==&gt; B</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Edge Labels</h3>
+        <p>Add labels between pipe characters:</p>
+        <pre><code><span class="t-kw">flowchart</span> <span class="t-dir">LR</span>
+  A <span class="t-op">--&gt;|</span><span class="t-lbl">yes</span><span class="t-op">|</span> B
+  A <span class="t-op">--&gt;|</span><span class="t-lbl">no</span><span class="t-op">|</span> C</code></pre>
+
+        <h3>Chains</h3>
+        <p>Chain multiple nodes in a single line:</p>
+        <pre><code>A <span class="t-op">--&gt;</span> B <span class="t-op">--&gt;</span> C <span class="t-op">--&gt;</span> D</code></pre>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <p>Set the flow direction after the <code>flowchart</code> keyword:</p>
+        <div class="shape-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Value</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>TB</code> / <code>TD</code></td><td>Top to bottom (default)</td></tr>
+              <tr><td><code>BT</code></td><td>Bottom to top</td></tr>
+              <tr><td><code>LR</code></td><td>Left to right</td></tr>
+              <tr><td><code>RL</code></td><td>Right to left</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="subgraphs">
+        <h2>Subgraphs</h2>
+        <p>Group nodes into labeled containers. Subgraphs can be nested and are collapsible by default.</p>
+        <pre><code><span class="t-kw">flowchart</span> <span class="t-dir">TD</span>
+  <span class="t-kw">subgraph</span> <span class="t-str">Backend</span>
+    API<span class="t-op">[</span><span class="t-str">API Server</span><span class="t-op">]</span> <span class="t-op">--&gt;</span> DB<span class="t-op">[(</span><span class="t-str">Database</span><span class="t-op">)]</span>
+    API <span class="t-op">--&gt;</span> Cache<span class="t-op">(</span><span class="t-str">Redis</span><span class="t-op">)</span>
+  <span class="t-kw">end</span>
+  <span class="t-kw">subgraph</span> <span class="t-str">Frontend</span>
+    App<span class="t-op">[</span><span class="t-str">React App</span><span class="t-op">]</span>
+  <span class="t-kw">end</span>
+  App <span class="t-op">--&gt;</span> API</code></pre>
+        <p>
+          Click the subgraph label to collapse/expand it. When collapsed, all internal nodes are replaced
+          by a single summary node showing the group name and node count.
+        </p>
+      </section>
+
+      <!-- API Reference -->
+      <section id="render">
+        <h2>API Reference</h2>
+
+        <h3><code>render(input, target, options?)</code></h3>
+        <p>Parse, layout, and render a diagram into a DOM element. Returns parse warnings.</p>
+        <div class="sig">
+          <pre><code><span class="t-fn">render</span>(
+  input: <span class="t-kw">string</span>,
+  target: <span class="t-kw">HTMLElement</span>,
+  options?: <span class="t-kw">FloraOptions</span>
+): &#123; warnings: <span class="t-kw">ParseWarning</span>[] &#125;</code></pre>
+        </div>
+        <p>This is the primary API. It handles the full pipeline and attaches an interactive SVG to the target element. Subgraph collapse/expand is wired up automatically.</p>
+        <pre><code><span class="t-kw">import</span> &#123; render &#125; <span class="t-kw">from</span> <span class="t-str">"florajs"</span>;
+
+<span class="t-kw">const</span> &#123; warnings &#125; = <span class="t-fn">render</span>(<span class="t-str">`flowchart LR
+  A --&gt; B --&gt; C`</span>, document.<span class="t-fn">getElementById</span>(<span class="t-str">"el"</span>));
+
+<span class="t-kw">if</span> (warnings.length) &#123;
+  console.<span class="t-fn">warn</span>(<span class="t-str">"Parse warnings:"</span>, warnings);
+&#125;</code></pre>
+      </section>
+
+      <section id="tosvgelement">
+        <h3><code>toSVGElement(input, options?)</code></h3>
+        <p>Parse, layout, and return an SVG element without attaching it to the DOM. Useful for server-side rendering or when you want to control where the SVG goes.</p>
+        <div class="sig">
+          <pre><code><span class="t-fn">toSVGElement</span>(
+  input: <span class="t-kw">string</span>,
+  options?: <span class="t-kw">FloraOptions</span>
+): &#123; svg: <span class="t-kw">SVGSVGElement</span>; warnings: <span class="t-kw">ParseWarning</span>[] &#125;</code></pre>
+        </div>
+        <pre><code><span class="t-kw">const</span> &#123; svg, warnings &#125; = <span class="t-fn">toSVGElement</span>(<span class="t-str">`flowchart LR
+  A --&gt; B`</span>);
+
+container.<span class="t-fn">appendChild</span>(svg);</code></pre>
+      </section>
+
+      <section id="toast">
+        <h3><code>toAST(input)</code></h3>
+        <p>Parse input and return the abstract syntax tree. No layout or rendering is performed.</p>
+        <div class="sig">
+          <pre><code><span class="t-fn">toAST</span>(
+  input: <span class="t-kw">string</span>
+): &#123; ast: <span class="t-kw">DiagramAST</span>; warnings: <span class="t-kw">ParseWarning</span>[] &#125;</code></pre>
+        </div>
+        <pre><code><span class="t-kw">const</span> &#123; ast &#125; = <span class="t-fn">toAST</span>(<span class="t-str">`flowchart LR
+  A[Start] --&gt; B&#123;Decision&#125;`</span>);
+
+console.<span class="t-fn">log</span>(ast.nodes);
+<span class="t-cmt">// [&#123; id: "A", label: "Start", shape: "rect" &#125;,</span>
+<span class="t-cmt">//  &#123; id: "B", label: "Decision", shape: "diamond" &#125;]</span>
+
+console.<span class="t-fn">log</span>(ast.edges);
+<span class="t-cmt">// [&#123; from: "A", to: "B", style: "solid" &#125;]</span></code></pre>
+      </section>
+
+      <section id="tolayout">
+        <h3><code>toLayout(input)</code></h3>
+        <p>Parse and compute node/edge positions. Returns the layout with x/y coordinates for every node and routed edge points.</p>
+        <div class="sig">
+          <pre><code><span class="t-fn">toLayout</span>(
+  input: <span class="t-kw">string</span>
+): &#123; layout: <span class="t-kw">LayoutResult</span>; warnings: <span class="t-kw">ParseWarning</span>[] &#125;</code></pre>
+        </div>
+        <pre><code><span class="t-kw">const</span> &#123; layout &#125; = <span class="t-fn">toLayout</span>(<span class="t-str">`flowchart LR
+  A --&gt; B --&gt; C`</span>);
+
+<span class="t-cmt">// layout.nodes[0] = &#123; id: "A", x: 90, y: 60, width: 100, height: 50, ... &#125;</span>
+<span class="t-cmt">// layout.edges[0] = &#123; from: "A", to: "B", points: [&#123;x, y&#125;, ...] &#125;</span>
+<span class="t-cmt">// layout.width, layout.height — bounding box of the full diagram</span></code></pre>
+      </section>
+
+      <section id="options">
+        <h3>Options</h3>
+        <p>All API functions that accept options use the <code>FloraOptions</code> interface:</p>
+        <div class="shape-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Option</th>
+                <th>Type</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>theme</code></td>
+                <td><code>"default" | "tufte" | "digital" | Partial&lt;FloraTheme&gt;</code></td>
+                <td><code>"default"</code></td>
+                <td>Theme preset name or custom theme overrides</td>
+              </tr>
+              <tr>
+                <td><code>interactive</code></td>
+                <td><code>boolean</code></td>
+                <td><code>true</code></td>
+                <td>Enable zoom, pan, hover, click, and lineage highlighting</td>
+              </tr>
+              <tr>
+                <td><code>onNodeClick</code></td>
+                <td><code>(nodeId: string) =&gt; void</code></td>
+                <td>&mdash;</td>
+                <td>Called when a node is clicked</td>
+              </tr>
+              <tr>
+                <td><code>onNodeHover</code></td>
+                <td><code>(nodeId: string | null) =&gt; void</code></td>
+                <td>&mdash;</td>
+                <td>Called on mouseenter/mouseleave (<code>null</code> on leave)</td>
+              </tr>
+              <tr>
+                <td><code>onSubgraphClick</code></td>
+                <td><code>(subgraphId: string) =&gt; void</code></td>
+                <td>&mdash;</td>
+                <td>Called when a subgraph is collapsed/expanded</td>
+              </tr>
+              <tr>
+                <td><code>onHighlight</code></td>
+                <td><code>(nodeId, upstream[], downstream[]) =&gt; void</code></td>
+                <td>&mdash;</td>
+                <td>Called when lineage highlighting is applied</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Theming -->
+      <section id="theme-presets">
+        <h2>Theming</h2>
+
+        <h3>Presets</h3>
+        <p>Flora ships with three built-in themes:</p>
+        <div class="theme-cards">
+          <div class="theme-card">
+            <div class="theme-preview" style="background: #FFFFFF; border-color: #0D32B2;">
+              <div class="theme-dot" style="background: #0D32B2;"></div>
+              <div class="theme-dot" style="background: #C77A20;"></div>
+              <div class="theme-dot" style="background: #6B3FA0;"></div>
+              <div class="theme-dot" style="background: #1A7F5A;"></div>
+            </div>
+            <h4>default</h4>
+            <p>Clean, colorful. Shape-coded nodes with subtle gradients.</p>
+          </div>
+          <div class="theme-card">
+            <div class="theme-preview" style="background: #FFFFF8; border-color: #333;">
+              <div class="theme-dot" style="background: #333;"></div>
+              <div class="theme-dot" style="background: #8B4513;"></div>
+              <div class="theme-dot" style="background: #444;"></div>
+              <div class="theme-dot" style="background: #555;"></div>
+            </div>
+            <h4>tufte</h4>
+            <p>Minimal, print-inspired. Cream background with muted strokes.</p>
+          </div>
+          <div class="theme-card">
+            <div class="theme-preview" style="background: #0F172A; border-color: #38BDF8;">
+              <div class="theme-dot" style="background: #38BDF8;"></div>
+              <div class="theme-dot" style="background: #FB923C;"></div>
+              <div class="theme-dot" style="background: #A78BFA;"></div>
+              <div class="theme-dot" style="background: #34D399;"></div>
+            </div>
+            <h4>digital</h4>
+            <p>Dark mode. Neon accents on a dark slate background.</p>
+          </div>
+        </div>
+        <pre><code><span class="t-fn">render</span>(input, el, &#123; theme: <span class="t-str">"tufte"</span> &#125;);
+<span class="t-fn">render</span>(input, el, &#123; theme: <span class="t-str">"digital"</span> &#125;);</code></pre>
+      </section>
+
+      <section id="custom-themes">
+        <h3>Custom Themes</h3>
+        <p>Pass a partial theme object to override specific values. Unspecified properties fall back to the default theme.</p>
+        <pre><code><span class="t-fn">render</span>(input, el, &#123;
+  theme: &#123;
+    background: <span class="t-str">"#1a1a2e"</span>,
+    nodeColors: &#123;
+      fill: <span class="t-str">"#16213e"</span>,
+      fillGradientEnd: <span class="t-str">"#16213e"</span>,
+      stroke: <span class="t-str">"#e94560"</span>,
+      text: <span class="t-str">"#eee"</span>,
+    &#125;,
+    edgeColors: &#123;
+      stroke: <span class="t-str">"#e94560"</span>,
+      label: <span class="t-str">"#aaa"</span>,
+      labelBackground: <span class="t-str">"#16213e"</span>,
+    &#125;,
+    shadow: <span class="t-kw">true</span>,
+  &#125;,
+&#125;);</code></pre>
+      </section>
+
+      <section id="theme-reference">
+        <h3>Theme Reference</h3>
+        <p>Full <code>FloraTheme</code> interface:</p>
+        <div class="shape-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>background</code></td><td><code>string</code></td><td>SVG background color</td></tr>
+              <tr><td><code>nodeColors</code></td><td><code>NodeColorSet</code></td><td>Default node fill, gradient end, stroke, text</td></tr>
+              <tr><td><code>shapeColors</code></td><td><code>object</code></td><td>Per-shape overrides: <code>diamond</code>, <code>stadium</code>, <code>rounded</code>, <code>cylinder</code>, <code>queue</code></td></tr>
+              <tr><td><code>edgeColors</code></td><td><code>object</code></td><td><code>stroke</code>, <code>label</code>, <code>labelBackground</code></td></tr>
+              <tr><td><code>fontFamily</code></td><td><code>string</code></td><td>Font stack for all text</td></tr>
+              <tr><td><code>fontSize</code></td><td><code>number</code></td><td>Base font size in pixels</td></tr>
+              <tr><td><code>nodeRadius</code></td><td><code>number</code></td><td>Border radius for rect nodes</td></tr>
+              <tr><td><code>nodePadding</code></td><td><code>&#123; x, y &#125;</code></td><td>Horizontal and vertical padding inside nodes</td></tr>
+              <tr><td><code>edgeWidth</code></td><td><code>number</code></td><td>Stroke width for edges</td></tr>
+              <tr><td><code>shadow</code></td><td><code>boolean</code></td><td>Enable drop shadow on nodes</td></tr>
+              <tr><td><code>subgraphColors</code></td><td><code>object</code></td><td><code>fill</code>, <code>stroke</code>, <code>label</code> for subgraph containers</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Each <code>NodeColorSet</code> has: <code>fill</code>, <code>fillGradientEnd</code>, <code>stroke</code>, <code>text</code>.</p>
+      </section>
+
+      <!-- Advanced -->
+      <section id="fault-tolerance">
+        <h2>Fault Tolerance</h2>
+        <p>
+          Flora never throws. When it encounters invalid syntax, it skips the broken line, renders everything else, and returns
+          structured warnings with line numbers and column positions.
+        </p>
+        <pre><code><span class="t-kw">const</span> &#123; warnings &#125; = <span class="t-fn">render</span>(<span class="t-str">`flowchart LR
+  A[Start] --&gt; B&#123;Decision&#125;
+  B --&gt;|Yes| C[Do thing
+  B --&gt;
+  D[End]`</span>, el);
+
+<span class="t-cmt">// Renders A, B, D &mdash; skips broken lines</span>
+<span class="t-cmt">// warnings:</span>
+<span class="t-cmt">// [</span>
+<span class="t-cmt">//   &#123; line: 3, col: 18, message: "Unterminated [](missing closing ])" &#125;,</span>
+<span class="t-cmt">//   &#123; line: 4, col: 3,  message: "Dangling arrow with no target node" &#125;</span>
+<span class="t-cmt">// ]</span></code></pre>
+        <p>This makes Flora ideal for AI-generated diagrams, where LLMs often produce slightly broken Mermaid syntax.</p>
+
+        <h3>What Flora recovers from</h3>
+        <ul>
+          <li>Unterminated brackets, parens, braces, quotes</li>
+          <li>Dangling arrows with no target</li>
+          <li>Arrows followed by unexpected tokens</li>
+          <li>Unterminated subgraphs (missing <code>end</code>)</li>
+          <li>Unknown diagram types (falls back to flowchart)</li>
+          <li>Unexpected characters (skipped with warning)</li>
+        </ul>
+      </section>
+
+      <section id="interactivity">
+        <h2>Interactivity</h2>
+        <p>
+          When <code>interactive: true</code> (the default), Flora adds:
+        </p>
+        <ul>
+          <li><strong>Zoom &amp; pan</strong> &mdash; scroll to zoom, drag to pan</li>
+          <li><strong>Hover</strong> &mdash; nodes highlight on mouseover (stroke widens)</li>
+          <li><strong>Click handlers</strong> &mdash; receive callbacks via <code>onNodeClick</code></li>
+          <li><strong>Subgraph toggle</strong> &mdash; click subgraph labels to collapse/expand</li>
+          <li><strong>Lineage highlighting</strong> &mdash; click a node to highlight its upstream and downstream</li>
+        </ul>
+        <pre><code><span class="t-fn">render</span>(input, el, &#123;
+  <span class="t-fn">onNodeClick</span>: (nodeId) =&gt; console.<span class="t-fn">log</span>(<span class="t-str">"Clicked:"</span>, nodeId),
+  <span class="t-fn">onNodeHover</span>: (nodeId) =&gt; console.<span class="t-fn">log</span>(<span class="t-str">"Hover:"</span>, nodeId),
+  <span class="t-fn">onSubgraphClick</span>: (id) =&gt; console.<span class="t-fn">log</span>(<span class="t-str">"Toggled:"</span>, id),
+&#125;);</code></pre>
+        <p>Set <code>interactive: false</code> to render a static SVG with no event handlers.</p>
+      </section>
+
+      <section id="lineage">
+        <h2>Lineage Highlighting</h2>
+        <p>
+          Click any node to highlight its full lineage &mdash; all upstream ancestors and downstream descendants.
+          Non-related nodes and edges are dimmed. Click the background or press <kbd>Escape</kbd> to clear.
+        </p>
+        <pre><code><span class="t-fn">render</span>(input, el, &#123;
+  <span class="t-fn">onHighlight</span>: (nodeId, upstream, downstream) =&gt; &#123;
+    console.<span class="t-fn">log</span>(<span class="t-str">`$&#123;nodeId&#125;: $&#123;upstream.length&#125; upstream, $&#123;downstream.length&#125; downstream`</span>);
+  &#125;,
+&#125;);</code></pre>
+        <p>
+          The <code>onHighlight</code> callback receives the clicked node ID plus arrays of all upstream and downstream
+          node IDs, so you can sync highlights with external UI (sidebars, details panels, etc).
+        </p>
+      </section>
+    </main>
+  </div>
+</Layout>
+
+<style>
+  .docs-layout {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 56px - 73px);
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--color-border);
+    padding: 32px 0 32px 24px;
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .sidebar-section h3 {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+  }
+
+  .sidebar-section a {
+    display: block;
+    font-size: 13.5px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    padding: 3px 0;
+    line-height: 1.5;
+  }
+
+  .sidebar-section a:hover {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  /* Content */
+  .docs-content {
+    flex: 1;
+    min-width: 0;
+    padding: 40px 48px 80px;
+  }
+
+  .docs-content h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-bottom: 12px;
+  }
+
+  .lead {
+    font-size: 17px;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+    max-width: 640px;
+    margin-bottom: 40px;
+  }
+
+  .docs-content section {
+    margin-bottom: 48px;
+  }
+
+  .docs-content h2 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .docs-content section:first-child h2 {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .docs-content h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    margin-top: 28px;
+  }
+
+  .docs-content p {
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    margin-bottom: 16px;
+    max-width: 680px;
+  }
+
+  .docs-content ul {
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    margin-bottom: 16px;
+    padding-left: 24px;
+    max-width: 680px;
+  }
+
+  .docs-content li {
+    margin-bottom: 4px;
+  }
+
+  .docs-content pre {
+    margin-bottom: 20px;
+    max-width: 720px;
+  }
+
+  .sig pre {
+    border-left: 3px solid var(--color-accent);
+  }
+
+  kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    box-shadow: 0 1px 0 var(--color-border);
+  }
+
+  /* Tables */
+  .shape-table {
+    margin-bottom: 20px;
+    max-width: 720px;
+    overflow-x: auto;
+  }
+
+  .shape-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .shape-table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-text);
+    padding: 10px 16px;
+    border-bottom: 2px solid var(--color-border);
+    white-space: nowrap;
+  }
+
+  .shape-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+  }
+
+  .shape-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .shape-table code {
+    font-size: 13px;
+  }
+
+  /* Theme cards */
+  .theme-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+    max-width: 720px;
+  }
+
+  .theme-card {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-surface);
+  }
+
+  .theme-preview {
+    height: 48px;
+    border-radius: 6px;
+    border: 2px solid;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .theme-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .theme-card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-family: var(--font-mono);
+  }
+
+  .theme-card p {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    margin-bottom: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .docs-layout {
+      flex-direction: column;
+    }
+
+    .sidebar {
+      width: 100%;
+      position: static;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--color-border);
+      padding: 20px 24px;
+    }
+
+    .sidebar-nav {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .docs-content {
+      padding: 24px;
+    }
+
+    .theme-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
