@@ -101,6 +101,7 @@ export interface FloraTheme {
   nodePadding: { x: number; y: number };
   edgeWidth: number;
   shadow: boolean;
+  handDrawn: boolean;
   subgraphColors: {
     fill: string;
     stroke: string;
@@ -108,7 +109,7 @@ export interface FloraTheme {
   };
 }
 
-export type ThemePreset = "default" | "tufte" | "digital";
+export type ThemePreset = "default" | "tufte" | "digital" | "sketch";
 
 export interface FloraOptions {
   theme?: ThemePreset | Partial<FloraTheme>;

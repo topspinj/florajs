@@ -57,6 +57,14 @@ function renderDefs(svg: SVGSVGElement, theme: FloraTheme, nodes: LayoutNode[]):
     defs.appendChild(filter);
   }
 
+  if (theme.handDrawn) {
+    const rough = el("filter", { id: "flora-rough", x: "-5%", y: "-5%", width: "110%", height: "110%" });
+    const turb = el("feTurbulence", { type: "turbulence", baseFrequency: "0.03", numOctaves: "3", seed: "1", result: "noise" });
+    const disp = el("feDisplacementMap", { in: "SourceGraphic", in2: "noise", scale: "3", xChannelSelector: "R", yChannelSelector: "G" });
+    rough.append(turb, disp);
+    defs.appendChild(rough);
+  }
+
   const marker = el("marker", {
     id: "flora-arrowhead",
     markerWidth: "12",
@@ -235,6 +243,10 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
     shape.setAttribute("filter", "url(#flora-shadow)");
   }
 
+  if (theme.handDrawn) {
+    group.setAttribute("filter", "url(#flora-rough)");
+  }
+
   // Collapsed subgraph summary nodes get a dashed border
   if (node.subgraphSummary) {
     shape.setAttribute("stroke-dasharray", "6,3");
@@ -244,9 +256,12 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
 
   group.appendChild(shape);
 
+  // Shift text down for cylinders to center within the body (below the top ellipse cap)
+  const textYOffset = node.shape === "cylinder" ? 6 : 1;
+
   const text = el("text", {
     x: node.x,
-    y: node.y + 1,
+    y: node.y + textYOffset,
     "text-anchor": "middle",
     "dominant-baseline": "central",
     fill: node.subgraphSummary ? theme.subgraphColors.label : colors.text,
@@ -349,6 +364,10 @@ function renderEdge(edge: LayoutEdge, theme: FloraTheme): SVGGElement {
     group.appendChild(text);
   }
 
+  if (theme.handDrawn) {
+    group.setAttribute("filter", "url(#flora-rough)");
+  }
+
   return group;
 }
 
@@ -438,6 +457,10 @@ function renderSubgraph(
     });
   }
 
+  if (theme.handDrawn) {
+    group.setAttribute("filter", "url(#flora-rough)");
+  }
+
   return group;
 }
 
@@ -446,8 +469,15 @@ function addZoomPan(svg: SVGSVGElement, content: SVGGElement): void {
   let translateX = 0;
   let translateY = 0;
   let isPanning = false;
-  let startX = 0;
-  let startY = 0;
+  let lastX = 0;
+  let lastY = 0;
+
+  function getViewBoxScale(): number {
+    const rect = svg.getBoundingClientRect();
+    const viewBox = svg.viewBox.baseVal;
+    if (!viewBox || rect.width === 0) return 1;
+    return viewBox.width / rect.width;
+  }
 
   function updateTransform(): void {
     content.setAttribute("transform", `translate(${translateX},${translateY}) scale(${scale})`);
@@ -455,11 +485,12 @@ function addZoomPan(svg: SVGSVGElement, content: SVGGElement): void {
 
   svg.addEventListener("wheel", (e) => {
     e.preventDefault();
+    const vbScale = getViewBoxScale();
     const rect = svg.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const mouseX = (e.clientX - rect.left) * vbScale;
+    const mouseY = (e.clientY - rect.top) * vbScale;
     const delta = e.deltaY > 0 ? 0.92 : 1.08;
-    const newScale = Math.max(0.1, Math.min(5, scale * delta));
+    const newScale = Math.max(0.1, Math.min(50, scale * delta));
     translateX = mouseX - (mouseX - translateX) * (newScale / scale);
     translateY = mouseY - (mouseY - translateY) * (newScale / scale);
     scale = newScale;
@@ -469,15 +500,20 @@ function addZoomPan(svg: SVGSVGElement, content: SVGGElement): void {
   svg.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
     isPanning = true;
-    startX = e.clientX - translateX;
-    startY = e.clientY - translateY;
+    lastX = e.clientX;
+    lastY = e.clientY;
     svg.style.cursor = "grabbing";
   });
 
   svg.addEventListener("mousemove", (e) => {
     if (!isPanning) return;
-    translateX = e.clientX - startX;
-    translateY = e.clientY - startY;
+    const vbScale = getViewBoxScale();
+    const dx = (e.clientX - lastX) * vbScale;
+    const dy = (e.clientY - lastY) * vbScale;
+    translateX += dx;
+    translateY += dy;
+    lastX = e.clientX;
+    lastY = e.clientY;
     updateTransform();
   });
 

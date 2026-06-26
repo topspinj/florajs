@@ -2,11 +2,13 @@ import type { FloraTheme, ThemePreset } from "../types.js";
 import { defaultTheme } from "./default.js";
 import { tufteTheme } from "./tufte.js";
 import { digitalTheme } from "./digital.js";
+import { sketchTheme } from "./sketch.js";
 
 export const themes: Record<ThemePreset, FloraTheme> = {
   default: defaultTheme,
   tufte: tufteTheme,
   digital: digitalTheme,
+  sketch: sketchTheme,
 };
 
 export function resolveTheme(theme?: ThemePreset | Partial<FloraTheme>): FloraTheme {
@@ -33,3 +35,4 @@ export function resolveTheme(theme?: ThemePreset | Partial<FloraTheme>): FloraTh
 export { defaultTheme } from "./default.js";
 export { tufteTheme } from "./tufte.js";
 export { digitalTheme } from "./digital.js";
+export { sketchTheme } from "./sketch.js";
