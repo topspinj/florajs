@@ -114,6 +114,7 @@ export interface FloraOptions {
   onNodeClick?: (nodeId: string) => void;
   onNodeHover?: (nodeId: string | null) => void;
   onSubgraphClick?: (subgraphId: string) => void;
+  onHighlight?: (nodeId: string, upstream: string[], downstream: string[]) => void;
 }
 
 export interface ParseWarning {

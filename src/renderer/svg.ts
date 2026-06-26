@@ -1,5 +1,6 @@
 import type { LayoutResult, LayoutNode, LayoutEdge, LayoutSubgraph, FloraTheme, FloraOptions, NodeColorSet } from "../types.js";
 import { resolveTheme } from "../themes/index.js";
+import { buildAdjacencyList, getUpstream, getDownstream } from "./highlight.js";
 
 function el(tag: string, attrs: Record<string, string | number>): SVGElement {
   const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -77,8 +78,6 @@ function renderDefs(svg: SVGSVGElement, theme: FloraTheme, nodes: LayoutNode[]):
 
 function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions): SVGGElement {
   const group = el("g", { class: "flora-node", "data-id": node.id }) as SVGGElement;
-  group.style.cursor = options.onNodeClick ? "pointer" : "default";
-
   const x = node.x - node.width / 2;
   const y = node.y - node.height / 2;
   const colors = colorsForShape(node.shape, theme);
@@ -159,6 +158,8 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       });
   }
 
+  shape.setAttribute("class", "flora-node-shape");
+
   if (theme.shadow) {
     shape.setAttribute("filter", "url(#flora-shadow)");
   }
@@ -195,9 +196,6 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       shape.setAttribute("stroke-width", "2");
       options.onNodeHover?.(null);
     });
-    if (options.onNodeClick) {
-      group.addEventListener("click", () => options.onNodeClick!(node.id));
-    }
   }
 
   return group;
@@ -228,7 +226,7 @@ function buildEdgePath(points: Array<{ x: number; y: number }>): string {
 }
 
 function renderEdge(edge: LayoutEdge, theme: FloraTheme): SVGGElement {
-  const group = el("g", { class: "flora-edge" }) as SVGGElement;
+  const group = el("g", { class: "flora-edge", "data-from": edge.from, "data-to": edge.to }) as SVGGElement;
 
   const path = el("path", {
     d: buildEdgePath(edge.points),
@@ -442,6 +440,25 @@ export function renderSVG(
 
   renderDefs(svg, theme, layout.nodes);
 
+  // Inject highlight/dim CSS
+  const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+  style.textContent = `
+    .flora-node, .flora-edge, .flora-subgraph {
+      transition: opacity 0.2s ease;
+    }
+    .flora-dimmed {
+      opacity: 0.15;
+      pointer-events: none;
+    }
+    .flora-highlighted-source .flora-node-shape {
+      stroke-width: 4;
+    }
+    .flora-highlighted-edge path {
+      stroke-width: 2.5;
+    }
+  `;
+  svg.appendChild(style);
+
   const content = el("g", { transform: `translate(${padding},${padding})` }) as SVGGElement;
 
   // Render subgraph containers first (behind everything)
@@ -480,7 +497,85 @@ export function renderSVG(
 
   svg.appendChild(content);
 
+  // Lineage highlighting
   if (options.interactive !== false) {
+    const adj = buildAdjacencyList(layout.edges);
+    let highlightedNodeId: string | null = null;
+
+    function clearHighlight(): void {
+      highlightedNodeId = null;
+      content.querySelectorAll(".flora-dimmed").forEach((el) => el.classList.remove("flora-dimmed"));
+      content.querySelectorAll(".flora-highlighted-source").forEach((el) => el.classList.remove("flora-highlighted-source"));
+      content.querySelectorAll(".flora-highlighted-edge").forEach((el) => el.classList.remove("flora-highlighted-edge"));
+    }
+
+    function applyHighlight(nodeId: string): void {
+      const upstream = getUpstream(nodeId, adj);
+      const downstream = getDownstream(nodeId, adj);
+      const highlighted = new Set([nodeId, ...upstream, ...downstream]);
+
+      // Dim/highlight nodes
+      content.querySelectorAll<SVGGElement>(".flora-node").forEach((nodeEl) => {
+        const id = nodeEl.getAttribute("data-id");
+        if (!id || !highlighted.has(id)) {
+          nodeEl.classList.add("flora-dimmed");
+        } else if (id === nodeId) {
+          nodeEl.classList.add("flora-highlighted-source");
+        }
+      });
+
+      // Dim/highlight edges
+      content.querySelectorAll<SVGGElement>(".flora-edge").forEach((edgeEl) => {
+        const from = edgeEl.getAttribute("data-from");
+        const to = edgeEl.getAttribute("data-to");
+        if (from && to && highlighted.has(from) && highlighted.has(to)) {
+          edgeEl.classList.add("flora-highlighted-edge");
+        } else {
+          edgeEl.classList.add("flora-dimmed");
+        }
+      });
+
+      // Dim subgraphs
+      content.querySelectorAll<SVGGElement>(".flora-subgraph").forEach((sgEl) => {
+        sgEl.classList.add("flora-dimmed");
+      });
+
+      options.onHighlight?.(nodeId, [...upstream], [...downstream]);
+    }
+
+    // Attach click handlers to non-summary nodes
+    content.querySelectorAll<SVGGElement>(".flora-node").forEach((nodeEl) => {
+      const id = nodeEl.getAttribute("data-id");
+      if (!id) return;
+      // Skip collapsed subgraph summary nodes (they have their own click handler)
+      const node = layout.nodes.find((n) => n.id === id);
+      if (node?.subgraphSummary) return;
+
+      nodeEl.style.cursor = "pointer";
+      nodeEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (highlightedNodeId === id) {
+          clearHighlight();
+        } else {
+          clearHighlight();
+          highlightedNodeId = id;
+          applyHighlight(id);
+        }
+        options.onNodeClick?.(id);
+      });
+    });
+
+    // Clear on background click
+    svg.addEventListener("click", () => {
+      if (highlightedNodeId) clearHighlight();
+    });
+
+    // Clear on Escape key
+    svg.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && highlightedNodeId) clearHighlight();
+    });
+    svg.setAttribute("tabindex", "0");
+
     addZoomPan(svg, content);
   }
 
