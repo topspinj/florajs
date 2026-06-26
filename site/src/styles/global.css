@@ -1,6 +1,7 @@
 :root {
-  --color-bg: #FFFFFF;
-  --color-surface: #F8FAFC;
+  --color-bg: #FEFDFB;
+  --color-surface: #F6F4F0;
+  --font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
   --color-text: #0F172A;
   --color-text-secondary: #475569;
   --color-text-muted: #94A3B8;

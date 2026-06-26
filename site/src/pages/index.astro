@@ -9,25 +9,25 @@ const heroDefault = `flowchart LR
   D --> E`;
 ---
 
-<Layout title="Flora — Fault-tolerant diagrams for AI">
+<Layout title="Flora — Beautiful, fault-tolerant diagrams">
   <!-- Hero -->
   <section class="hero">
     <div class="container">
       <div class="hero-content">
-        <h1>Beautiful, AI-native<br />diagrams.</h1>
+        <h1><em>Beautiful,</em> AI-native<br />diagrams.</h1>
         <p class="hero-sub">
-          Flora is a fault-tolerant, Mermaid-compatible diagram library
-          for AI applications. Beautiful, interactive SVGs from imperfect input.
+          A fault-tolerant, Mermaid-compatible diagram library for AI
+          applications. Interactive SVGs from imperfect input.
         </p>
         <div class="hero-actions">
           <a href="#get-started" class="btn btn-primary">Get Started</a>
-          <a href="https://github.com/topspinj/florajs" class="btn btn-ghost">View on GitHub</a>
+          <a href="https://github.com/topspinj/florajs" class="btn btn-ghost">GitHub</a>
         </div>
       </div>
 
       <div class="hero-showcase">
         <div class="showcase-code">
-          <div class="panel-label panel-label-dark">Input <span class="edit-hint">← try editing</span></div>
+          <div class="panel-label panel-label-dark">Input <span class="edit-hint">&larr; try editing</span></div>
           <textarea id="hero-input" spellcheck="false" set:text={heroDefault}></textarea>
         </div>
         <div class="showcase-diagram">
@@ -47,7 +47,7 @@ const heroDefault = `flowchart LR
         Flora renders what it can and tells you what went wrong.
       </p>
       <div class="comparison">
-        <div class="comp-panel">
+        <div class="comp-panel comp-mermaid">
           <div class="comp-label"><span class="dot dot-red"></span>Mermaid</div>
           <pre><code><span class="t-kw">await</span> mermaid.<span class="t-fn">render</span>(<span class="t-str">"id"</span>, <span class="t-str">`
   flowchart LR
@@ -60,7 +60,7 @@ const heroDefault = `flowchart LR
 <span class="t-cmt">// Parse error on line 4</span>
 <span class="t-cmt">// Nothing renders. App crashes.</span></code></pre>
         </div>
-        <div class="comp-panel">
+        <div class="comp-panel comp-flora">
           <div class="comp-label"><span class="dot dot-green"></span>Flora</div>
           <pre><code><span class="t-kw">const</span> &#123; warnings &#125; = <span class="t-fn">render</span>(<span class="t-str">`
   flowchart LR
@@ -250,11 +250,33 @@ const heroDefault = `flowchart LR
 </script>
 
 <style>
-  /* Hero */
+  /* ── Hero ── */
 
   .hero {
-    padding: 80px 24px 64px;
-    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(13, 50, 178, 0.04) 0%, transparent 70%);
+    position: relative;
+    padding: 80px 24px 96px;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: -60%;
+    z-index: -1;
+    background:
+      radial-gradient(circle at 25% 35%, rgba(13, 50, 178, 0.07), transparent 40%),
+      radial-gradient(circle at 75% 25%, rgba(107, 63, 160, 0.055), transparent 35%),
+      radial-gradient(circle at 60% 80%, rgba(199, 122, 32, 0.04), transparent 40%),
+      radial-gradient(circle at 15% 70%, rgba(26, 127, 90, 0.035), transparent 35%);
+    animation: drift 25s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0); }
+    33% { transform: translate(2%, -1.5%); }
+    66% { transform: translate(-1.5%, 2%); }
   }
 
   .container {
@@ -268,31 +290,25 @@ const heroDefault = `flowchart LR
     margin: 0 auto;
   }
 
-  .badge {
-    display: inline-block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-accent);
-    background: var(--color-accent-light);
-    padding: 4px 14px;
-    border-radius: 999px;
-    margin-bottom: 24px;
-  }
-
   .hero h1 {
-    font-size: clamp(32px, 5vw, 52px);
-    font-weight: 700;
-    line-height: 1.12;
-    letter-spacing: -0.035em;
+    font-family: var(--font-serif);
+    font-size: clamp(36px, 6vw, 62px);
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
     color: var(--color-text);
     margin-bottom: 20px;
+  }
+
+  .hero h1 em {
+    font-style: italic;
   }
 
   .hero-sub {
     font-size: 18px;
     color: var(--color-text-secondary);
     line-height: 1.65;
-    max-width: 560px;
+    max-width: 520px;
     margin: 0 auto 32px;
   }
 
@@ -337,17 +353,21 @@ const heroDefault = `flowchart LR
     color: var(--color-text);
   }
 
-  /* Hero Showcase */
+  /* ── Hero Showcase ── */
+
   .hero-showcase {
     margin-top: 56px;
     display: grid;
     grid-template-columns: 2fr 3fr;
-    border-radius: 16px;
+    border-radius: 20px;
     overflow: hidden;
-    border: 1px solid var(--color-border);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.08),
-      0 1px 2px rgba(0, 0, 0, 0.04);
+      0 1px 3px rgba(0, 0, 0, 0.03),
+      0 8px 24px rgba(0, 0, 0, 0.06),
+      0 24px 48px -12px rgba(0, 0, 0, 0.08),
+      0 0 80px -20px rgba(13, 50, 178, 0.06),
+      0 0 80px -20px rgba(107, 63, 160, 0.04);
   }
 
   .panel-label {
@@ -366,7 +386,7 @@ const heroDefault = `flowchart LR
 
   .panel-label-light {
     color: var(--color-text-muted);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     background: white;
   }
 
@@ -401,7 +421,7 @@ const heroDefault = `flowchart LR
 
   .showcase-diagram {
     background: white;
-    border-left: 1px solid var(--color-border);
+    border-left: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   .diagram-frame {
@@ -417,21 +437,17 @@ const heroDefault = `flowchart LR
     height: auto;
   }
 
-  /* Problem / Comparison */
-  .problem {
-    padding: 96px 24px;
-    background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
-    border-bottom: 1px solid var(--color-border);
-  }
+  /* ── Section Headings (shared) ── */
 
   .problem h2,
   .features h2,
   .get-started h2,
-  .roadmap h2 {
-    font-size: 32px;
-    font-weight: 700;
-    letter-spacing: -0.025em;
+  .roadmap h2,
+  .lineage-demo h2 {
+    font-family: var(--font-serif);
+    font-size: 36px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
     text-align: center;
     margin-bottom: 16px;
   }
@@ -445,6 +461,30 @@ const heroDefault = `flowchart LR
     line-height: 1.65;
   }
 
+  /* ── Problem / Comparison ── */
+
+  .problem {
+    position: relative;
+    padding: 96px 24px;
+    background: var(--color-surface);
+  }
+
+  .problem::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(13, 50, 178, 0.12) 25%,
+      rgba(107, 63, 160, 0.12) 50%,
+      rgba(199, 122, 32, 0.1) 75%,
+      transparent
+    );
+  }
+
   .comparison {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -454,6 +494,10 @@ const heroDefault = `flowchart LR
   .comp-panel pre {
     height: 100%;
     margin: 0;
+  }
+
+  .comp-mermaid pre {
+    opacity: 0.88;
   }
 
   .comp-label {
@@ -478,7 +522,8 @@ const heroDefault = `flowchart LR
   .dot-red { background: #ef4444; }
   .dot-green { background: #22c55e; }
 
-  /* Features */
+  /* ── Features ── */
+
   .features {
     padding: 96px 24px;
   }
@@ -495,10 +540,9 @@ const heroDefault = `flowchart LR
 
   .feature-card {
     padding: 32px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    border-left: 3px solid var(--color-border);
+    border-radius: 14px;
+    border: 1px solid;
+    border-left: 3px solid;
   }
 
   .feature-card h3 {
@@ -513,17 +557,94 @@ const heroDefault = `flowchart LR
     line-height: 1.65;
   }
 
-  .fc-amber { border-left-color: #C77A20; }
-  .fc-indigo { border-left-color: #0D32B2; }
-  .fc-purple { border-left-color: #6B3FA0; }
-  .fc-green { border-left-color: #1A7F5A; }
+  .fc-amber {
+    background: rgba(199, 122, 32, 0.05);
+    border-color: rgba(199, 122, 32, 0.1);
+    border-left-color: #C77A20;
+  }
+  .fc-amber h3 { color: #9A5F10; }
 
-  /* Get Started */
+  .fc-indigo {
+    background: rgba(13, 50, 178, 0.04);
+    border-color: rgba(13, 50, 178, 0.08);
+    border-left-color: #0D32B2;
+  }
+  .fc-indigo h3 { color: #0A2890; }
+
+  .fc-purple {
+    background: rgba(107, 63, 160, 0.05);
+    border-color: rgba(107, 63, 160, 0.08);
+    border-left-color: #6B3FA0;
+  }
+  .fc-purple h3 { color: #5A3488; }
+
+  .fc-green {
+    background: rgba(26, 127, 90, 0.04);
+    border-color: rgba(26, 127, 90, 0.08);
+    border-left-color: #1A7F5A;
+  }
+  .fc-green h3 { color: #0E6B47; }
+
+  /* ── Lineage Demo ── */
+
+  .lineage-demo {
+    padding: 96px 24px;
+    background: linear-gradient(180deg, var(--color-bg) 0%, rgba(13, 50, 178, 0.02) 50%, var(--color-bg) 100%);
+  }
+
+  .lineage-showcase {
+    max-width: 800px;
+    margin: 0 auto;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    overflow: hidden;
+    background: white;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.03),
+      0 8px 24px rgba(0, 0, 0, 0.05);
+  }
+
+  .lineage-frame {
+    min-height: 420px;
+    padding: 24px;
+  }
+
+  .lineage-frame :global(svg) {
+    width: 100%;
+    height: auto;
+  }
+
+  .lineage-hint {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(0, 0, 0, 0.015);
+  }
+
+  /* ── Get Started ── */
+
   .get-started {
+    position: relative;
     padding: 96px 24px;
     background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
-    border-bottom: 1px solid var(--color-border);
+  }
+
+  .get-started::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(26, 127, 90, 0.1) 25%,
+      rgba(13, 50, 178, 0.1) 50%,
+      rgba(107, 63, 160, 0.1) 75%,
+      transparent
+    );
   }
 
   .get-started h2 {
@@ -547,11 +668,11 @@ const heroDefault = `flowchart LR
   }
 
   .api-heading {
-    font-size: 20px;
-    font-weight: 600;
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 400;
     text-align: center;
     margin-bottom: 20px;
-    letter-spacing: -0.01em;
   }
 
   .api-grid {
@@ -563,7 +684,7 @@ const heroDefault = `flowchart LR
   .api-card {
     padding: 20px 24px;
     background: var(--color-bg);
-    border: 1px solid var(--color-border);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 10px;
   }
 
@@ -578,7 +699,8 @@ const heroDefault = `flowchart LR
     color: var(--color-text-secondary);
   }
 
-  /* Roadmap */
+  /* ── Roadmap ── */
+
   .roadmap {
     padding: 96px 24px;
   }
@@ -600,7 +722,7 @@ const heroDefault = `flowchart LR
     align-items: flex-start;
     gap: 16px;
     padding: 20px 24px;
-    border: 1px solid var(--color-border);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 10px;
     background: var(--color-surface);
   }
@@ -641,51 +763,8 @@ const heroDefault = `flowchart LR
     line-height: 1.55;
   }
 
-  /* Lineage Demo */
-  .lineage-demo {
-    padding: 96px 24px;
-  }
+  /* ── Responsive ── */
 
-  .lineage-demo h2 {
-    font-size: 32px;
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    text-align: center;
-    margin-bottom: 16px;
-  }
-
-  .lineage-showcase {
-    max-width: 800px;
-    margin: 0 auto;
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    overflow: hidden;
-    background: white;
-    box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.06),
-      0 1px 2px rgba(0, 0, 0, 0.04);
-  }
-
-  .lineage-frame {
-    min-height: 420px;
-    padding: 24px;
-  }
-
-  .lineage-frame :global(svg) {
-    width: 100%;
-    height: auto;
-  }
-
-  .lineage-hint {
-    font-size: 13px;
-    color: var(--color-text-muted);
-    text-align: center;
-    padding: 12px;
-    border-top: 1px solid var(--color-border);
-    background: #fafbfc;
-  }
-
-  /* Responsive */
   @media (max-width: 768px) {
     .hero-showcase {
       grid-template-columns: 1fr;
@@ -693,7 +772,7 @@ const heroDefault = `flowchart LR
 
     .showcase-diagram {
       border-left: none;
-      border-top: 1px solid var(--color-border);
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
     }
 
     .comparison,
@@ -703,11 +782,19 @@ const heroDefault = `flowchart LR
     }
 
     .hero h1 {
-      font-size: 28px;
+      font-size: 32px;
     }
 
     .hero h1 br {
       display: none;
+    }
+
+    .problem h2,
+    .features h2,
+    .get-started h2,
+    .roadmap h2,
+    .lineage-demo h2 {
+      font-size: 28px;
     }
   }
 </style>
