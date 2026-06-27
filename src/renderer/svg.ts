@@ -185,10 +185,10 @@ function renderDefs(svg: SVGSVGElement, theme: FloraTheme, nodes: LayoutNode[], 
   }
 
   if (theme.shadow) {
-    const filter = el("filter", { id: `flora-shadow-${id}`, x: "-20%", y: "-20%", width: "140%", height: "150%" });
-    const blur = el("feGaussianBlur", { in: "SourceAlpha", stdDeviation: "3" });
-    const offset = el("feOffset", { dx: "0", dy: "2", result: "shadow" });
-    const flood = el("feFlood", { "flood-color": "#0A0F25", "flood-opacity": "0.08" });
+    const filter = el("filter", { id: `flora-shadow-${id}`, x: "-20%", y: "-20%", width: "140%", height: "160%" });
+    const blur = el("feGaussianBlur", { in: "SourceAlpha", stdDeviation: "8" });
+    const offset = el("feOffset", { dx: "0", dy: "4", result: "shadow" });
+    const flood = el("feFlood", { "flood-color": "#37352F", "flood-opacity": "0.06" });
     const composite = el("feComposite", { in2: "shadow", operator: "in" });
     const merge = el("feMerge", {});
     merge.append(el("feMergeNode", {}), el("feMergeNode", { in: "SourceGraphic" }));
@@ -474,7 +474,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions, 
     x: node.x, y: node.y + textYOffset,
     "text-anchor": "middle", "dominant-baseline": "central",
     fill: colors.text, "font-family": theme.fontFamily,
-    "font-size": theme.fontSize, "font-weight": "400",
+    "font-size": theme.fontSize, "font-weight": "500",
   });
   text.textContent = node.label;
   group.appendChild(text);
@@ -664,7 +664,7 @@ function renderEdge(edge: LayoutEdge, theme: FloraTheme, id: string): SVGGElemen
       y: mid.y - labelHeight / 2,
       width: labelWidth,
       height: labelHeight,
-      rx: 4,
+      rx: 6,
       fill: theme.edgeColors.labelBackground,
       stroke: theme.edgeColors.stroke,
       "stroke-width": "1",
