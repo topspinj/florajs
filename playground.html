@@ -201,6 +201,7 @@
             <option value="digital">Digital</option>
             <option value="sketch">Sketch</option>
           </select>
+          <button id="copy-svg-btn" style="background:#2563eb;color:white;border:none;font-family:inherit;font-size:12px;font-weight:600;padding:4px 12px;border-radius:5px;cursor:pointer;">Copy SVG</button>
           <button id="export-btn" style="background:#059669;color:white;border:none;font-family:inherit;font-size:12px;font-weight:600;padding:4px 12px;border-radius:5px;cursor:pointer;">Export PNG</button>
         </span>
       </div>
@@ -210,7 +211,7 @@
   </div>
 
   <script type="module">
-    import { render, toPNG } from "./dist/index.js";
+    import { render, toPNG, toSVGString } from "./dist/index.js";
 
     const input = document.getElementById("input");
     const themeSelect = document.getElementById("theme");
@@ -229,6 +230,14 @@
     }
 
     renderBtn.addEventListener("click", doRender);
+
+    const copySvgBtn = document.getElementById("copy-svg-btn");
+    copySvgBtn.addEventListener("click", async () => {
+      const { svg } = toSVGString(input.value, { theme: themeSelect.value });
+      await navigator.clipboard.writeText(svg);
+      copySvgBtn.textContent = "Copied!";
+      setTimeout(() => { copySvgBtn.textContent = "Copy SVG"; }, 1500);
+    });
 
     const exportBtn = document.getElementById("export-btn");
     exportBtn.addEventListener("click", async () => {

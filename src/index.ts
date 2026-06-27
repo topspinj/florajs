@@ -40,6 +40,12 @@ export function toSVGElement(input: string, options: FloraOptions = {}): { svg: 
   return { svg, warnings };
 }
 
+export function toSVGString(input: string, options: FloraOptions = {}): { svg: string; warnings: ParseWarning[] } {
+  const { svg, warnings } = toSVGElement(input, options);
+  const serializer = new XMLSerializer();
+  return { svg: serializer.serializeToString(svg), warnings };
+}
+
 export interface ToPNGOptions extends FloraOptions {
   scale?: number;
 }
