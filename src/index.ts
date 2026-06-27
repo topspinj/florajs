@@ -1,6 +1,7 @@
 import { parse } from "./parser/index.js";
 import { computeLayout } from "./layout/index.js";
 import { renderSVG } from "./renderer/index.js";
+import { renderSVGString, type RenderSVGStringOptions } from "./renderer/svg-string.js";
 import { defaultTheme } from "./themes/default.js";
 import { tufteTheme } from "./themes/tufte.js";
 import { digitalTheme } from "./themes/digital.js";
@@ -40,10 +41,12 @@ export function toSVGElement(input: string, options: FloraOptions = {}): { svg: 
   return { svg, warnings };
 }
 
-export function toSVGString(input: string, options: FloraOptions = {}): { svg: string; warnings: ParseWarning[] } {
-  const { svg, warnings } = toSVGElement(input, options);
-  const serializer = new XMLSerializer();
-  return { svg: serializer.serializeToString(svg), warnings };
+export function toSVGString(input: string, options: RenderSVGStringOptions = {}): { svg: string; warnings: ParseWarning[] } {
+  const { ast, warnings } = parse(input);
+  const theme = resolveTheme(options.theme);
+  const layout = computeLayout(ast, theme);
+  const svg = renderSVGString(layout, options);
+  return { svg, warnings };
 }
 
 export interface ToPNGOptions extends FloraOptions {
@@ -97,6 +100,8 @@ export async function toPNG(input: string, options: ToPNGOptions = {}): Promise<
 export { parse } from "./parser/index.js";
 export { computeLayout } from "./layout/index.js";
 export { renderSVG } from "./renderer/index.js";
+export { renderSVGString } from "./renderer/svg-string.js";
+export type { RenderSVGStringOptions } from "./renderer/svg-string.js";
 export { defaultTheme } from "./themes/default.js";
 export { tufteTheme } from "./themes/tufte.js";
 export { digitalTheme } from "./themes/digital.js";
