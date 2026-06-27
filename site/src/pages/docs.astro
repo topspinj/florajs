@@ -21,6 +21,10 @@ const base = import.meta.env.BASE_URL;
           <a href="#subgraphs">Subgraphs</a>
         </div>
         <div class="sidebar-section">
+          <h3>Integrations</h3>
+          <a href="#markdown">Markdown / Rehype</a>
+        </div>
+        <div class="sidebar-section">
           <h3>API Reference</h3>
           <a href="#render">render()</a>
           <a href="#tosvgelement">toSVGElement()</a>
@@ -89,6 +93,97 @@ git clone https://github.com/topspinj/florajs.git
 npm install &amp;&amp; npm run build
 npx serve .
 <span class="t-cmt"># Open http://localhost:3000/playground.html</span></code></pre>
+      </section>
+
+      <!-- Markdown / Rehype -->
+      <section id="markdown">
+        <h2>Markdown / Rehype</h2>
+        <p>
+          Flora ships a <a href="https://github.com/rehypejs/rehype">rehype</a> plugin that transforms
+          fenced code blocks into rendered SVG diagrams at build time. It works with any framework that
+          supports rehype &mdash; Astro, Docusaurus, Next.js, and more.
+        </p>
+
+        <h3>Usage</h3>
+        <p>Write Flora syntax in a fenced code block with the <code>flora</code> or <code>flowchart</code> language tag:</p>
+        <pre><code>```flora
+flowchart LR
+  A[Source] --&gt; B{Decision}
+  B --&gt;|Yes| C[Deploy]
+  B --&gt;|No| D[Fix]
+```</code></pre>
+        <p>The code block is replaced with a rendered SVG at build time &mdash; no client-side JavaScript required.</p>
+
+        <h3>Astro</h3>
+        <pre><code><span class="t-cmt">// astro.config.mjs</span>
+<span class="t-kw">import</span> rehypeFlora <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora/rehype"</span>;
+
+<span class="t-kw">export default</span> <span class="t-fn">defineConfig</span>(&#123;
+  markdown: &#123;
+    rehypePlugins: [rehypeFlora],
+  &#125;,
+&#125;);</code></pre>
+
+        <h3>Docusaurus</h3>
+        <pre><code><span class="t-cmt">// docusaurus.config.js</span>
+<span class="t-kw">import</span> rehypeFlora <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora/rehype"</span>;
+
+<span class="t-kw">export default</span> &#123;
+  presets: [
+    [<span class="t-str">'@docusaurus/preset-classic'</span>, &#123;
+      docs: &#123; rehypePlugins: [rehypeFlora] &#125;,
+      blog: &#123; rehypePlugins: [rehypeFlora] &#125;,
+    &#125;],
+  ],
+&#125;;</code></pre>
+
+        <h3>Next.js</h3>
+        <pre><code><span class="t-cmt">// With next-mdx-remote or @next/mdx</span>
+<span class="t-kw">import</span> rehypeFlora <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora/rehype"</span>;
+
+<span class="t-kw">const</span> mdxOptions = &#123;
+  rehypePlugins: [rehypeFlora],
+&#125;;</code></pre>
+
+        <h3>Options</h3>
+        <p>Pass options as the second element in the plugin array:</p>
+        <pre><code>rehypePlugins: [[rehypeFlora, &#123; theme: <span class="t-str">"tufte"</span> &#125;]]</code></pre>
+        <div class="shape-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Option</th>
+                <th>Type</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>theme</code></td>
+                <td><code>"default" | "tufte" | "digital" | "sketch"</code></td>
+                <td><code>"default"</code></td>
+                <td>Theme preset or custom theme object</td>
+              </tr>
+              <tr>
+                <td><code>className</code></td>
+                <td><code>string</code></td>
+                <td><code>"flora-diagram"</code></td>
+                <td>CSS class added to the wrapper <code>&lt;div&gt;</code></td>
+              </tr>
+              <tr>
+                <td><code>languages</code></td>
+                <td><code>string[]</code></td>
+                <td><code>["flora", "flowchart"]</code></td>
+                <td>Code block languages to match</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The rendered diagrams are static SVGs. For interactivity (zoom, pan, lineage highlighting),
+          use the <a href="#render"><code>render()</code></a> API on the client side.
+        </p>
       </section>
 
       <!-- Syntax -->
