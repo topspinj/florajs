@@ -6,6 +6,9 @@ import { buildAdjacencyList, getUpstream, getDownstream } from "./highlight.js";
 // Sketch utilities — lightweight hand-drawn path generation (no dependencies)
 // ---------------------------------------------------------------------------
 
+let _nextId = 0;
+function uid(): string { return String(_nextId++); }
+
 const SKETCH_AMP = 1.2; // jitter amplitude in pixels
 
 class Rng {
@@ -160,7 +163,7 @@ function gradKeyForShape(shape: string): string {
 // Defs (gradients, shadow filter, arrowhead marker)
 // ---------------------------------------------------------------------------
 
-function renderDefs(svg: SVGSVGElement, theme: FloraTheme, nodes: LayoutNode[]): void {
+function renderDefs(svg: SVGSVGElement, theme: FloraTheme, nodes: LayoutNode[], id: string): void {
   const defs = el("defs", {}) as SVGDefsElement;
 
   const usedShapes = new Set(nodes.map((n) => n.shape));
@@ -174,7 +177,7 @@ function renderDefs(svg: SVGSVGElement, theme: FloraTheme, nodes: LayoutNode[]):
   if (usedShapes.has("queue")) colorSets.push({ key: "queue", colors: theme.shapeColors.queue });
 
   for (const { key, colors } of colorSets) {
-    const grad = el("linearGradient", { id: `flora-grad-${key}`, x1: "0", y1: "0", x2: "0", y2: "1" });
+    const grad = el("linearGradient", { id: `flora-grad-${key}-${id}`, x1: "0", y1: "0", x2: "0", y2: "1" });
     const stop1 = el("stop", { offset: "0%", "stop-color": colors.fill });
     const stop2 = el("stop", { offset: "100%", "stop-color": colors.fillGradientEnd });
     grad.append(stop1, stop2);
@@ -182,7 +185,7 @@ function renderDefs(svg: SVGSVGElement, theme: FloraTheme, nodes: LayoutNode[]):
   }
 
   if (theme.shadow) {
-    const filter = el("filter", { id: "flora-shadow", x: "-20%", y: "-20%", width: "140%", height: "150%" });
+    const filter = el("filter", { id: `flora-shadow-${id}`, x: "-20%", y: "-20%", width: "140%", height: "150%" });
     const blur = el("feGaussianBlur", { in: "SourceAlpha", stdDeviation: "3" });
     const offset = el("feOffset", { dx: "0", dy: "2", result: "shadow" });
     const flood = el("feFlood", { "flood-color": "#0A0F25", "flood-opacity": "0.08" });
@@ -194,7 +197,7 @@ function renderDefs(svg: SVGSVGElement, theme: FloraTheme, nodes: LayoutNode[]):
   }
 
   const marker = el("marker", {
-    id: "flora-arrowhead",
+    id: `flora-arrowhead-${id}`,
     markerWidth: "12",
     markerHeight: "8",
     refX: "11",
@@ -331,7 +334,7 @@ function renderNodeSketch(node: LayoutNode, theme: FloraTheme, options: FloraOpt
 // Clean node renderer
 // ---------------------------------------------------------------------------
 
-function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions): SVGGElement {
+function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions, id: string): SVGGElement {
   const group = el("g", { class: "flora-node", "data-id": node.id }) as SVGGElement;
   const x = node.x - node.width / 2;
   const y = node.y - node.height / 2;
@@ -354,7 +357,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       ].join(" ");
       shape = el("polygon", {
         points,
-        fill: `url(#flora-grad-${gradKey})`,
+        fill: `url(#flora-grad-${gradKey}-${id})`,
         stroke: colors.stroke,
         "stroke-width": String(theme.nodeStrokeWidth),
         "stroke-linejoin": "round",
@@ -365,7 +368,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       const r = Math.max(node.width, node.height) / 2;
       shape = el("circle", {
         cx: node.x, cy: node.y, r,
-        fill: `url(#flora-grad-${gradKey})`,
+        fill: `url(#flora-grad-${gradKey}-${id})`,
         stroke: colors.stroke,
         "stroke-width": String(theme.nodeStrokeWidth),
       });
@@ -384,7 +387,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       ].join(" ");
       const body = el("path", {
         d,
-        fill: `url(#flora-grad-${gradKey})`,
+        fill: `url(#flora-grad-${gradKey}-${id})`,
         stroke: colors.stroke,
         "stroke-width": String(theme.nodeStrokeWidth),
       });
@@ -392,7 +395,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       const topEllipse = el("ellipse", {
         cx: node.x, cy: bodyTop,
         rx: node.width / 2, ry,
-        fill: `url(#flora-grad-${gradKey})`,
+        fill: `url(#flora-grad-${gradKey}-${id})`,
         stroke: colors.stroke,
         "stroke-width": String(theme.nodeStrokeWidth),
       });
@@ -413,7 +416,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       ].join(" ");
       const body = el("path", {
         d,
-        fill: `url(#flora-grad-${gradKey})`,
+        fill: `url(#flora-grad-${gradKey}-${id})`,
         stroke: colors.stroke,
         "stroke-width": String(theme.nodeStrokeWidth),
       });
@@ -421,7 +424,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       const rightEllipse = el("ellipse", {
         cx: bodyRight, cy: node.y,
         rx, ry: node.height / 2,
-        fill: `url(#flora-grad-${gradKey})`,
+        fill: `url(#flora-grad-${gradKey}-${id})`,
         stroke: colors.stroke,
         "stroke-width": String(theme.nodeStrokeWidth),
       });
@@ -433,7 +436,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       shape = el("rect", {
         x, y, width: node.width, height: node.height,
         rx: node.height / 2, ry: node.height / 2,
-        fill: `url(#flora-grad-${gradKey})`,
+        fill: `url(#flora-grad-${gradKey}-${id})`,
         stroke: colors.stroke,
         "stroke-width": String(theme.nodeStrokeWidth),
       });
@@ -442,7 +445,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       shape = el("rect", {
         x, y, width: node.width, height: node.height,
         rx: 12, ry: 12,
-        fill: `url(#flora-grad-${gradKey})`,
+        fill: `url(#flora-grad-${gradKey}-${id})`,
         stroke: colors.stroke,
         "stroke-width": String(theme.nodeStrokeWidth),
       });
@@ -451,7 +454,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
       shape = el("rect", {
         x, y, width: node.width, height: node.height,
         rx: theme.nodeRadius, ry: theme.nodeRadius,
-        fill: `url(#flora-grad-${gradKey})`,
+        fill: `url(#flora-grad-${gradKey}-${id})`,
         stroke: colors.stroke,
         "stroke-width": String(theme.nodeStrokeWidth),
       });
@@ -460,7 +463,7 @@ function renderNode(node: LayoutNode, theme: FloraTheme, options: FloraOptions):
   shape.setAttribute("class", "flora-node-shape");
 
   if (theme.shadow) {
-    shape.setAttribute("filter", "url(#flora-shadow)");
+    shape.setAttribute("filter", `url(#flora-shadow-${id})`);
   }
 
   group.appendChild(shape);
@@ -629,7 +632,7 @@ function renderEdgeSketch(edge: LayoutEdge, theme: FloraTheme): SVGGElement {
 // Clean edge renderer
 // ---------------------------------------------------------------------------
 
-function renderEdge(edge: LayoutEdge, theme: FloraTheme): SVGGElement {
+function renderEdge(edge: LayoutEdge, theme: FloraTheme, id: string): SVGGElement {
   const group = el("g", { class: "flora-edge", "data-from": edge.from, "data-to": edge.to }) as SVGGElement;
 
   const path = el("path", {
@@ -639,7 +642,7 @@ function renderEdge(edge: LayoutEdge, theme: FloraTheme): SVGGElement {
     "stroke-width": theme.edgeWidth,
     "stroke-linecap": "round",
     "stroke-linejoin": "round",
-    "marker-end": "url(#flora-arrowhead)",
+    "marker-end": `url(#flora-arrowhead-${id})`,
   });
 
   if (edge.style === "dotted") {
@@ -851,6 +854,7 @@ export function renderSVG(
   const theme = resolveTheme(options.theme);
   const padding = 60;
   const sketch = theme.handDrawn;
+  const id = uid();
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
@@ -859,7 +863,7 @@ export function renderSVG(
   svg.setAttribute("viewBox", `0 0 ${layout.width + padding * 2} ${layout.height + padding * 2}`);
   svg.style.background = theme.background;
 
-  renderDefs(svg, theme, layout.nodes);
+  renderDefs(svg, theme, layout.nodes, id);
 
   const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
   style.textContent = `
@@ -892,11 +896,11 @@ export function renderSVG(
   }
 
   for (const edge of layout.edges) {
-    content.appendChild(sketch ? renderEdgeSketch(edge, theme) : renderEdge(edge, theme));
+    content.appendChild(sketch ? renderEdgeSketch(edge, theme) : renderEdge(edge, theme, id));
   }
 
   for (const node of layout.nodes) {
-    content.appendChild(sketch ? renderNodeSketch(node, theme, options) : renderNode(node, theme, options));
+    content.appendChild(sketch ? renderNodeSketch(node, theme, options) : renderNode(node, theme, options, id));
   }
 
   svg.appendChild(content);
