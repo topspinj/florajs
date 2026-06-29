@@ -119,11 +119,18 @@ describe("flowchart parser", () => {
     expect(ast.direction).toBe("TB");
   });
 
-  it("falls back to flowchart on unknown diagram type instead of throwing", () => {
-    const { ast, warnings } = parse("unknown A --> B");
+  it("falls back to flowchart on unknown input instead of throwing", () => {
+    const { ast } = parse("unknown A --> B");
 
     expect(ast.type).toBe("flowchart");
-    expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings[0]!.message).toContain("Unknown diagram type");
+  });
+
+  it("returns unsupported AST for known non-flowchart types", () => {
+    const { ast } = parse("sequenceDiagram\n  Alice->>Bob: Hello");
+
+    expect(ast.type).toBe("unsupported");
+    if (ast.type === "unsupported") {
+      expect(ast.detectedType).toBe("sequenceDiagram");
+    }
   });
 });

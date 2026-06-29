@@ -6,14 +6,65 @@ import { defaultTheme } from "./themes/default.js";
 import { tufteTheme } from "./themes/tufte.js";
 import { digitalTheme } from "./themes/digital.js";
 import { resolveTheme } from "./themes/index.js";
-import type { FloraOptions, DiagramAST, LayoutResult, ParseWarning } from "./types.js";
+import type { FloraOptions, DiagramAST, FloraTheme, LayoutResult, ParseWarning } from "./types.js";
+
+function escapeXml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function renderUnsupportedSVG(detectedType: string, theme: FloraTheme): SVGSVGElement {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("height", "100%");
+  svg.setAttribute("viewBox", "0 0 400 120");
+  svg.style.background = theme.background;
+
+  const text1 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  text1.setAttribute("x", "200");
+  text1.setAttribute("y", "45");
+  text1.setAttribute("text-anchor", "middle");
+  text1.setAttribute("font-family", theme.fontFamily);
+  text1.setAttribute("font-size", String(theme.fontSize));
+  text1.setAttribute("fill", theme.edgeColors.stroke);
+  text1.textContent = `Unsupported diagram type: ${detectedType}`;
+  svg.appendChild(text1);
+
+  const text2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  text2.setAttribute("x", "200");
+  text2.setAttribute("y", "75");
+  text2.setAttribute("text-anchor", "middle");
+  text2.setAttribute("font-family", theme.fontFamily);
+  text2.setAttribute("font-size", String(theme.fontSize - 2));
+  text2.setAttribute("fill", theme.edgeColors.label);
+  text2.textContent = "Flora currently supports flowchart diagrams only.";
+  svg.appendChild(text2);
+
+  return svg;
+}
+
+function renderUnsupportedSVGString(detectedType: string, theme: FloraTheme): string {
+  const escaped = escapeXml(detectedType);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 400 120" style="background:${escapeXml(theme.background)}">`
+    + `<text x="200" y="45" text-anchor="middle" font-family="${escapeXml(theme.fontFamily)}" font-size="${theme.fontSize}" fill="${escapeXml(theme.edgeColors.stroke)}">Unsupported diagram type: ${escaped}</text>`
+    + `<text x="200" y="75" text-anchor="middle" font-family="${escapeXml(theme.fontFamily)}" font-size="${theme.fontSize - 2}" fill="${escapeXml(theme.edgeColors.label)}">Flora currently supports flowchart diagrams only.</text>`
+    + `</svg>`;
+}
 
 export interface RenderResult {
   warnings: ParseWarning[];
+  unsupportedType?: string;
 }
 
 export function render(input: string, target: HTMLElement, options: FloraOptions = {}): RenderResult {
   const { ast, warnings } = parse(input);
+
+  if (ast.type === "unsupported") {
+    target.innerHTML = "";
+    target.appendChild(renderUnsupportedSVG(ast.detectedType, resolveTheme(options.theme)));
+    return { warnings, unsupportedType: ast.detectedType };
+  }
+
   const theme = resolveTheme(options.theme);
   const layout = computeLayout(ast, theme);
   const svg = renderSVG(layout, options);
@@ -28,21 +79,30 @@ export function toAST(input: string): { ast: DiagramAST; warnings: ParseWarning[
   return parse(input);
 }
 
-export function toLayout(input: string): { layout: LayoutResult; warnings: ParseWarning[] } {
+export function toLayout(input: string): { layout: LayoutResult; warnings: ParseWarning[]; unsupportedType?: string } {
   const { ast, warnings } = parse(input);
+  if (ast.type === "unsupported") {
+    return { layout: { nodes: [], edges: [], subgraphs: [], width: 0, height: 0 }, warnings, unsupportedType: ast.detectedType };
+  }
   const layout = computeLayout(ast);
   return { layout, warnings };
 }
 
-export function toSVGElement(input: string, options: FloraOptions = {}): { svg: SVGSVGElement; warnings: ParseWarning[] } {
+export function toSVGElement(input: string, options: FloraOptions = {}): { svg: SVGSVGElement; warnings: ParseWarning[]; unsupportedType?: string } {
   const { ast, warnings } = parse(input);
+  if (ast.type === "unsupported") {
+    return { svg: renderUnsupportedSVG(ast.detectedType, resolveTheme(options.theme)), warnings, unsupportedType: ast.detectedType };
+  }
   const layout = computeLayout(ast);
   const svg = renderSVG(layout, options);
   return { svg, warnings };
 }
 
-export function toSVGString(input: string, options: RenderSVGStringOptions = {}): { svg: string; warnings: ParseWarning[] } {
+export function toSVGString(input: string, options: RenderSVGStringOptions = {}): { svg: string; warnings: ParseWarning[]; unsupportedType?: string } {
   const { ast, warnings } = parse(input);
+  if (ast.type === "unsupported") {
+    return { svg: renderUnsupportedSVGString(ast.detectedType, resolveTheme(options.theme)), warnings, unsupportedType: ast.detectedType };
+  }
   const theme = resolveTheme(options.theme);
   const layout = computeLayout(ast, theme);
   const svg = renderSVGString(layout, options);
@@ -124,4 +184,5 @@ export type {
   ParseWarning,
   ParseResult,
   ThemePreset,
+  UnsupportedDiagramAST,
 } from "./types.js";

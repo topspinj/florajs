@@ -1,4 +1,4 @@
-export type DiagramType = "flowchart" | "erd";
+export type DiagramType = "flowchart" | "erd" | "unsupported";
 
 export type FlowchartDirection = "TB" | "TD" | "BT" | "LR" | "RL";
 
@@ -32,7 +32,12 @@ export interface FlowchartAST {
   subgraphs: FlowchartSubgraph[];
 }
 
-export type DiagramAST = FlowchartAST;
+export interface UnsupportedDiagramAST {
+  type: "unsupported";
+  detectedType: string;
+}
+
+export type DiagramAST = FlowchartAST | UnsupportedDiagramAST;
 
 export interface LayoutNode {
   id: string;

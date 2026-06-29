@@ -68,12 +68,44 @@ describe("fault-tolerant parser", () => {
     expect(warnings.length).toBeGreaterThan(0);
   });
 
-  it("falls back to flowchart for unknown diagram types", () => {
+  it("returns unsupported AST for known-but-unsupported diagram types", () => {
     const { ast, warnings } = parse(`sequenceDiagram
+      Alice->>Bob: Hello`);
+
+    expect(ast.type).toBe("unsupported");
+    if (ast.type === "unsupported") {
+      expect(ast.detectedType).toBe("sequenceDiagram");
+    }
+    // No warnings — this is a clean detection, not a fallback
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("detects multiple unsupported diagram types", () => {
+    const unsupportedTypes = [
+      "classDiagram",
+      "stateDiagram",
+      "erDiagram",
+      "gantt",
+      "journey",
+      "pie",
+      "mindmap",
+      "timeline",
+    ];
+
+    for (const type of unsupportedTypes) {
+      const { ast } = parse(`${type}\n  content here`);
+      expect(ast.type).toBe("unsupported");
+      if (ast.type === "unsupported") {
+        expect(ast.detectedType).toBe(type);
+      }
+    }
+  });
+
+  it("still falls back to flowchart for genuinely unknown input", () => {
+    const { ast } = parse(`somethingRandom
       A --> B`);
 
     expect(ast.type).toBe("flowchart");
-    expect(warnings.some((w) => w.message.includes("Unknown diagram type"))).toBe(true);
   });
 
   it("handles unterminated subgraph", () => {

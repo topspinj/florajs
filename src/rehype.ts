@@ -57,6 +57,7 @@ export default function rehypeFlora(options: RehypeFloraOptions = {}) {
 
       const source = getCodeText(node.children![0]!);
       const { ast } = parse(source);
+      if (ast.type === "unsupported") return;
       const theme = resolveTheme(options.theme);
       const layout = computeLayout(ast, theme);
       const svgString = renderSVGString(layout, { theme: options.theme });
