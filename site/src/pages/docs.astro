@@ -23,6 +23,7 @@ const base = import.meta.env.BASE_URL;
         <div class="sidebar-section">
           <h3>Integrations</h3>
           <a href="#markdown">Markdown / Rehype</a>
+          <a href="#react">React</a>
         </div>
         <div class="sidebar-section">
           <h3>API Reference</h3>
@@ -37,6 +38,13 @@ const base = import.meta.env.BASE_URL;
           <a href="#theme-presets">Presets</a>
           <a href="#custom-themes">Custom Themes</a>
           <a href="#theme-reference">Theme Reference</a>
+        </div>
+        <div class="sidebar-section">
+          <h3>Types</h3>
+          <a href="#types-overview">Overview</a>
+          <a href="#types-parsing">Parsing</a>
+          <a href="#types-layout">Layout</a>
+          <a href="#types-theming">Theming</a>
         </div>
         <div class="sidebar-section">
           <h3>Advanced</h3>
@@ -184,6 +192,120 @@ flowchart LR
           The rendered diagrams are static SVGs. For interactivity (zoom, pan, lineage highlighting),
           use the <a href="#render"><code>render()</code></a> API on the client side.
         </p>
+      </section>
+
+      <!-- React -->
+      <section id="react">
+        <h2>React</h2>
+        <p>
+          Flora ships a first-class React component that wraps the core <code>render()</code> API.
+          Import it from <code>@topspinj/flora/react</code>.
+        </p>
+
+        <h3>Usage</h3>
+        <pre><code><span class="t-kw">import</span> &#123; Flora &#125; <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora/react"</span>;
+
+<span class="t-kw">function</span> <span class="t-fn">App</span>() &#123;
+  <span class="t-kw">return</span> (
+    &lt;<span class="t-fn">Flora</span>
+      source={<span class="t-str">`flowchart LR
+        A[Start] --&gt; B&#123;Decision&#125;
+        B --&gt;|Yes| C[Deploy]
+        B --&gt;|No| D[Fix]`</span>}
+      theme=<span class="t-str">"default"</span>
+      interactive={<span class="t-kw">true</span>}
+      onNodeClick={(id) =&gt; console.<span class="t-fn">log</span>(<span class="t-str">"Clicked:"</span>, id)}
+    /&gt;
+  );
+&#125;</code></pre>
+        <p>
+          The component re-renders automatically when <code>source</code>, <code>theme</code>, or callback props change.
+        </p>
+
+        <h3>Props</h3>
+        <div class="shape-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Prop</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>source</code></td>
+                <td><code>string</code></td>
+                <td>Yes</td>
+                <td>Mermaid-compatible diagram source string</td>
+              </tr>
+              <tr>
+                <td><code>theme</code></td>
+                <td><code>ThemePreset | Partial&lt;FloraTheme&gt;</code></td>
+                <td>No</td>
+                <td>Theme preset name or custom theme overrides</td>
+              </tr>
+              <tr>
+                <td><code>interactive</code></td>
+                <td><code>boolean</code></td>
+                <td>No</td>
+                <td>Enable zoom, pan, hover, click, and lineage highlighting</td>
+              </tr>
+              <tr>
+                <td><code>onNodeClick</code></td>
+                <td><code>(nodeId: string) =&gt; void</code></td>
+                <td>No</td>
+                <td>Called when a node is clicked</td>
+              </tr>
+              <tr>
+                <td><code>onNodeHover</code></td>
+                <td><code>(nodeId: string | null) =&gt; void</code></td>
+                <td>No</td>
+                <td>Called on mouseenter/mouseleave (<code>null</code> on leave)</td>
+              </tr>
+              <tr>
+                <td><code>onHighlight</code></td>
+                <td><code>(nodeId, upstream[], downstream[]) =&gt; void</code></td>
+                <td>No</td>
+                <td>Called when lineage highlighting is applied</td>
+              </tr>
+              <tr>
+                <td><code>onWarnings</code></td>
+                <td><code>(warnings: ParseWarning[]) =&gt; void</code></td>
+                <td>No</td>
+                <td>Called after each render with any parse warnings</td>
+              </tr>
+              <tr>
+                <td><code>className</code></td>
+                <td><code>string</code></td>
+                <td>No</td>
+                <td>CSS class name for the container div</td>
+              </tr>
+              <tr>
+                <td><code>style</code></td>
+                <td><code>React.CSSProperties</code></td>
+                <td>No</td>
+                <td>Inline styles for the container div</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Handling Warnings</h3>
+        <p>Use the <code>onWarnings</code> callback to surface parse warnings in your UI:</p>
+        <pre><code><span class="t-kw">function</span> <span class="t-fn">DiagramWithWarnings</span>(&#123; source &#125;) &#123;
+  <span class="t-kw">const</span> [warnings, setWarnings] = <span class="t-fn">useState</span>([]);
+
+  <span class="t-kw">return</span> (
+    &lt;div&gt;
+      &lt;<span class="t-fn">Flora</span> source={source} onWarnings={setWarnings} /&gt;
+      {warnings.<span class="t-fn">map</span>((w, i) =&gt; (
+        &lt;p key={i}&gt;Line {w.line}: {w.message}&lt;/p&gt;
+      ))}
+    &lt;/div&gt;
+  );
+&#125;</code></pre>
       </section>
 
       <!-- Syntax -->
@@ -425,7 +547,7 @@ console.<span class="t-fn">log</span>(ast.edges);
             <tbody>
               <tr>
                 <td><code>theme</code></td>
-                <td><code>"default" | "tufte" | "digital" | Partial&lt;FloraTheme&gt;</code></td>
+                <td><code>"default" | "tufte" | "digital" | "sketch" | Partial&lt;FloraTheme&gt;</code></td>
                 <td><code>"default"</code></td>
                 <td>Theme preset name or custom theme overrides</td>
               </tr>
@@ -550,6 +672,228 @@ console.<span class="t-fn">log</span>(ast.edges);
           </table>
         </div>
         <p>Each <code>NodeColorSet</code> has: <code>fill</code>, <code>fillGradientEnd</code>, <code>stroke</code>, <code>text</code>.</p>
+      </section>
+
+      <!-- Types -->
+      <section id="types-overview">
+        <h2>Types</h2>
+        <p>
+          Flora exports all TypeScript types from its main entry point. Import them as needed:
+        </p>
+        <pre><code><span class="t-kw">import type</span> &#123;
+  FloraOptions, FloraTheme, ThemePreset,
+  DiagramAST, FlowchartAST, FlowchartNode, FlowchartEdge,
+  LayoutResult, LayoutNode, LayoutEdge,
+  ParseWarning, ParseResult,
+&#125; <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora"</span>;</code></pre>
+
+        <h3>Core Types</h3>
+        <div class="shape-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>FloraOptions</code></td><td>Options passed to <code>render()</code>, <code>toSVGElement()</code>, etc.</td></tr>
+              <tr><td><code>RenderResult</code></td><td>Return type of <code>render()</code> &mdash; <code>&#123; warnings, unsupportedType? &#125;</code></td></tr>
+              <tr><td><code>ParseResult</code></td><td>Return type of <code>toAST()</code> &mdash; <code>&#123; ast, warnings &#125;</code></td></tr>
+              <tr><td><code>ParseWarning</code></td><td>A structured warning: <code>&#123; line, col, message &#125;</code></td></tr>
+              <tr><td><code>DiagramType</code></td><td><code>"flowchart" | "erd" | "unsupported"</code></td></tr>
+              <tr><td><code>FlowchartDirection</code></td><td><code>"TB" | "TD" | "BT" | "LR" | "RL"</code></td></tr>
+              <tr><td><code>NodeShape</code></td><td><code>"rect" | "rounded" | "diamond" | "circle" | "stadium" | "cylinder" | "queue"</code></td></tr>
+              <tr><td><code>ThemePreset</code></td><td><code>"default" | "tufte" | "digital" | "sketch"</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="types-parsing">
+        <h3>Parsing Types</h3>
+        <p>These types represent the abstract syntax tree returned by <code>toAST()</code>.</p>
+
+        <h4><code>DiagramAST</code></h4>
+        <p>A union type: <code>FlowchartAST | UnsupportedDiagramAST</code>. Check the <code>type</code> field to narrow.</p>
+
+        <h4><code>FlowchartAST</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>type</code></td><td><code>"flowchart"</code></td><td>Discriminant</td></tr>
+              <tr><td><code>direction</code></td><td><code>FlowchartDirection</code></td><td>Flow direction (TB, LR, etc.)</td></tr>
+              <tr><td><code>nodes</code></td><td><code>FlowchartNode[]</code></td><td>All parsed nodes</td></tr>
+              <tr><td><code>edges</code></td><td><code>FlowchartEdge[]</code></td><td>All parsed edges</td></tr>
+              <tr><td><code>subgraphs</code></td><td><code>FlowchartSubgraph[]</code></td><td>All parsed subgraphs</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>FlowchartNode</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td><code>string</code></td><td>Unique node identifier</td></tr>
+              <tr><td><code>label</code></td><td><code>string</code></td><td>Display text</td></tr>
+              <tr><td><code>shape</code></td><td><code>NodeShape</code></td><td>Visual shape of the node</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>FlowchartEdge</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>from</code></td><td><code>string</code></td><td>Source node ID</td></tr>
+              <tr><td><code>to</code></td><td><code>string</code></td><td>Target node ID</td></tr>
+              <tr><td><code>label</code></td><td><code>string?</code></td><td>Optional edge label</td></tr>
+              <tr><td><code>style</code></td><td><code>"solid" | "dotted" | "thick"</code></td><td>Edge line style</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>FlowchartSubgraph</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td><code>string</code></td><td>Unique subgraph identifier</td></tr>
+              <tr><td><code>label</code></td><td><code>string</code></td><td>Display label</td></tr>
+              <tr><td><code>nodeIds</code></td><td><code>string[]</code></td><td>IDs of nodes inside this subgraph</td></tr>
+              <tr><td><code>parentId</code></td><td><code>string?</code></td><td>Parent subgraph ID (for nesting)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>UnsupportedDiagramAST</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>type</code></td><td><code>"unsupported"</code></td><td>Discriminant</td></tr>
+              <tr><td><code>detectedType</code></td><td><code>string</code></td><td>The diagram type that was detected but not supported</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="types-layout">
+        <h3>Layout Types</h3>
+        <p>These types represent computed positions returned by <code>toLayout()</code>.</p>
+
+        <h4><code>LayoutResult</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>nodes</code></td><td><code>LayoutNode[]</code></td><td>Positioned nodes</td></tr>
+              <tr><td><code>edges</code></td><td><code>LayoutEdge[]</code></td><td>Routed edges with point arrays</td></tr>
+              <tr><td><code>subgraphs</code></td><td><code>LayoutSubgraph[]</code></td><td>Positioned subgraph containers</td></tr>
+              <tr><td><code>width</code></td><td><code>number</code></td><td>Bounding box width of the full diagram</td></tr>
+              <tr><td><code>height</code></td><td><code>number</code></td><td>Bounding box height of the full diagram</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>LayoutNode</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td><code>string</code></td><td>Node identifier</td></tr>
+              <tr><td><code>x</code>, <code>y</code></td><td><code>number</code></td><td>Center position</td></tr>
+              <tr><td><code>width</code>, <code>height</code></td><td><code>number</code></td><td>Dimensions</td></tr>
+              <tr><td><code>label</code></td><td><code>string</code></td><td>Display text</td></tr>
+              <tr><td><code>shape</code></td><td><code>NodeShape</code></td><td>Visual shape</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>LayoutEdge</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>from</code></td><td><code>string</code></td><td>Source node ID</td></tr>
+              <tr><td><code>to</code></td><td><code>string</code></td><td>Target node ID</td></tr>
+              <tr><td><code>label</code></td><td><code>string?</code></td><td>Optional edge label</td></tr>
+              <tr><td><code>style</code></td><td><code>"solid" | "dotted" | "thick"</code></td><td>Edge line style</td></tr>
+              <tr><td><code>points</code></td><td><code>Array&lt;&#123; x: number; y: number &#125;&gt;</code></td><td>Routed edge waypoints</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>LayoutSubgraph</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td><code>string</code></td><td>Subgraph identifier</td></tr>
+              <tr><td><code>label</code></td><td><code>string</code></td><td>Display label</td></tr>
+              <tr><td><code>x</code>, <code>y</code></td><td><code>number</code></td><td>Top-left position</td></tr>
+              <tr><td><code>width</code>, <code>height</code></td><td><code>number</code></td><td>Dimensions</td></tr>
+              <tr><td><code>nodeCount</code></td><td><code>number</code></td><td>Number of contained nodes</td></tr>
+              <tr><td><code>parentId</code></td><td><code>string?</code></td><td>Parent subgraph ID</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="types-theming">
+        <h3>Theming Types</h3>
+
+        <h4><code>FloraOptions</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>theme</code></td><td><code>ThemePreset | Partial&lt;FloraTheme&gt;</code></td><td>Theme preset name or custom overrides</td></tr>
+              <tr><td><code>interactive</code></td><td><code>boolean</code></td><td>Enable interactive features</td></tr>
+              <tr><td><code>onNodeClick</code></td><td><code>(nodeId: string) =&gt; void</code></td><td>Node click callback</td></tr>
+              <tr><td><code>onNodeHover</code></td><td><code>(nodeId: string | null) =&gt; void</code></td><td>Node hover callback</td></tr>
+              <tr><td><code>onHighlight</code></td><td><code>(nodeId, upstream[], downstream[]) =&gt; void</code></td><td>Lineage highlight callback</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>FloraTheme</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>background</code></td><td><code>string</code></td><td>SVG background color</td></tr>
+              <tr><td><code>nodeColors</code></td><td><code>NodeColorSet</code></td><td>Default node colors</td></tr>
+              <tr><td><code>shapeColors</code></td><td><code>object</code></td><td>Per-shape color overrides for <code>diamond</code>, <code>stadium</code>, <code>rounded</code>, <code>cylinder</code>, <code>queue</code></td></tr>
+              <tr><td><code>edgeColors</code></td><td><code>&#123; stroke, label, labelBackground &#125;</code></td><td>Edge rendering colors</td></tr>
+              <tr><td><code>fontFamily</code></td><td><code>string</code></td><td>Font stack for all text</td></tr>
+              <tr><td><code>fontSize</code></td><td><code>number</code></td><td>Base font size in pixels</td></tr>
+              <tr><td><code>nodeRadius</code></td><td><code>number</code></td><td>Border radius for rect nodes</td></tr>
+              <tr><td><code>nodePadding</code></td><td><code>&#123; x, y &#125;</code></td><td>Internal node padding</td></tr>
+              <tr><td><code>edgeWidth</code></td><td><code>number</code></td><td>Stroke width for edges</td></tr>
+              <tr><td><code>nodeStrokeWidth</code></td><td><code>number</code></td><td>Stroke width for node borders</td></tr>
+              <tr><td><code>shadow</code></td><td><code>boolean</code></td><td>Enable drop shadow on nodes</td></tr>
+              <tr><td><code>handDrawn</code></td><td><code>boolean</code></td><td>Enable hand-drawn sketch style</td></tr>
+              <tr><td><code>subgraphColors</code></td><td><code>&#123; fill, stroke, label &#125;</code></td><td>Subgraph container colors</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>NodeColorSet</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>fill</code></td><td><code>string</code></td><td>Node fill color</td></tr>
+              <tr><td><code>fillGradientEnd</code></td><td><code>string</code></td><td>Gradient end color (same as fill for flat)</td></tr>
+              <tr><td><code>stroke</code></td><td><code>string</code></td><td>Border color</td></tr>
+              <tr><td><code>text</code></td><td><code>string</code></td><td>Text color</td></tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <!-- Advanced -->
