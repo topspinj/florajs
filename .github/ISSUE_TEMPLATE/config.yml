@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Playground
+    url: https://florajs.dev/playground/
+    about: Reproduce an issue and grab a share link before filing — the URL encodes your diagram.

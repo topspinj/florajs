@@ -1,0 +1,43 @@
+name: Bug report
+description: Something renders wrong, throws, or behaves unexpectedly
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! The fastest way for us to reproduce it
+        is a [playground](https://florajs.dev/playground/) share link — the URL encodes your
+        diagram, so just paste it below.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Diagram source or playground link
+      description: Paste a playground share URL, or the diagram source that triggers the bug.
+      placeholder: |
+        https://florajs.dev/playground/#flora:...
+
+        or
+
+        flowchart LR
+          A[Start] --> B{Decision}
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Flora version
+      placeholder: e.g. 0.3.1, or "playground"
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: e.g. Chrome 138 / macOS, Node 22, React 19
