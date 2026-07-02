@@ -1,0 +1,495 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Flora — Playground" description="Write, preview, and share Flora diagrams in your browser." fullscreen>
+  <main class="play">
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <label for="example">Example</label>
+        <select id="example">
+          <option value="pipeline">Data pipeline</option>
+          <option value="decision">Decision flow</option>
+          <option value="architecture">Web architecture</option>
+          <option value="subgraphs">Subgraphs</option>
+          <option value="shapes">Node shapes</option>
+        </select>
+        <label for="theme">Theme</label>
+        <select id="theme">
+          <option value="default">Default</option>
+          <option value="tufte">Tufte</option>
+          <option value="digital">Digital</option>
+          <option value="sketch">Sketch</option>
+        </select>
+      </div>
+      <div class="toolbar-group">
+        <button id="share-btn" class="btn btn-primary">Share</button>
+        <button id="embed-btn" class="btn">Embed</button>
+        <button id="copy-svg-btn" class="btn">Copy SVG</button>
+        <button id="download-svg-btn" class="btn">SVG</button>
+        <button id="download-png-btn" class="btn">PNG</button>
+      </div>
+    </div>
+    <div class="split">
+      <div class="editor-pane">
+        <textarea id="input" spellcheck="false" aria-label="Diagram source"></textarea>
+      </div>
+      <div class="resize-handle" id="resize-handle"></div>
+      <div class="preview-pane">
+        <div id="diagram"></div>
+        <div id="status" class="status" hidden></div>
+      </div>
+    </div>
+    <div class="hint">
+      Live preview as you type. Click a node to highlight its lineage; press Escape to clear.
+      The URL updates as you edit — copy it (or hit Share) to send your diagram to anyone.
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { render, toPNG, toSVGString } from "@topspinj/flora";
+
+  const EXAMPLES: Record<string, string> = {
+    pipeline: `flowchart TD
+  src[Data Source] --> raw[(Raw Table)]
+  raw --> stg_orders[Staging Orders]
+  raw --> stg_customers[Staging Customers]
+  raw --> stg_payments[Staging Payments]
+  stg_orders --> fct_orders[Fact Orders]
+  stg_customers --> dim_customers[Dim Customers]
+  stg_payments --> fct_orders
+  fct_orders --> mart_revenue[Revenue Mart]
+  dim_customers --> mart_revenue
+  fct_orders --> mart_ops[Ops Mart]
+  mart_revenue --> dashboard[Dashboard]
+  mart_ops --> alerts{Alerts}
+  dim_customers --> report([Customer Report])`,
+    decision: `flowchart TD
+  start([Start]) --> check{Tests pass?}
+  check -->|yes| review[Code review]
+  check -->|no| fix[Fix failures]
+  fix --> check
+  review --> approved{Approved?}
+  approved -->|yes| merge[Merge]
+  approved -->|no| revise[Address feedback]
+  revise --> review
+  merge --> deploy([Deploy])`,
+    architecture: `flowchart LR
+  user([User]) --> cdn[CDN]
+  cdn --> lb[Load Balancer]
+  lb --> web1[Web Server 1]
+  lb --> web2[Web Server 2]
+  web1 --> api[API Gateway]
+  web2 --> api
+  api --> auth[[Auth Service]]
+  api --> orders[[Order Service]]
+  auth --> cache[(Redis)]
+  orders --> db[(Postgres)]
+  orders -.-> queue[Job Queue]
+  queue --> worker[Worker]`,
+    subgraphs: `flowchart TD
+  subgraph Ingestion
+    api[API Events] --> collector[Collector]
+    logs[App Logs] --> collector
+  end
+  subgraph Processing
+    collector --> clean[Clean & Dedupe]
+    clean --> enrich[Enrich]
+  end
+  enrich --> warehouse[(Warehouse)]
+  warehouse --> bi[BI Dashboards]`,
+    shapes: `flowchart LR
+  a[Rectangle] --> b(Rounded)
+  b --> c([Stadium])
+  c --> d[[Subroutine]]
+  d --> e[(Cylinder)]
+  e --> f{Diamond}
+  f -->|labeled| g[Solid edge]
+  f -.->|dotted| h[Dotted edge]
+  f ==>|thick| i[Thick edge]`,
+  };
+
+  const input = document.getElementById("input") as HTMLTextAreaElement;
+  const themeSelect = document.getElementById("theme") as HTMLSelectElement;
+  const exampleSelect = document.getElementById("example") as HTMLSelectElement;
+  const diagram = document.getElementById("diagram") as HTMLElement;
+  const status = document.getElementById("status") as HTMLElement;
+
+  // --- Hash codec: #flora:<base64url(deflate-raw(JSON{code,theme}))> ---
+
+  const HASH_PREFIX = "#flora:";
+
+  function bytesToBase64url(bytes: Uint8Array): string {
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function base64urlToBytes(text: string): Uint8Array {
+    const binary = atob(text.replace(/-/g, "+").replace(/_/g, "/"));
+    return Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+  }
+
+  async function encodeState(code: string, theme: string): Promise<string> {
+    const bytes = new TextEncoder().encode(JSON.stringify({ code, theme }));
+    const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+    const buf = await new Response(stream).arrayBuffer();
+    return HASH_PREFIX + bytesToBase64url(new Uint8Array(buf));
+  }
+
+  async function decodeState(hash: string): Promise<{ code: string; theme: string } | null> {
+    if (!hash.startsWith(HASH_PREFIX)) return null;
+    try {
+      const bytes = base64urlToBytes(hash.slice(HASH_PREFIX.length));
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+      const json = await new Response(stream).text();
+      const state = JSON.parse(json);
+      if (typeof state.code !== "string") return null;
+      return { code: state.code, theme: typeof state.theme === "string" ? state.theme : "default" };
+    } catch {
+      return null;
+    }
+  }
+
+  // --- Rendering ---
+
+  function doRender() {
+    try {
+      diagram.innerHTML = "";
+      const { warnings, unsupportedType } = render(input.value, diagram, {
+        theme: themeSelect.value as any,
+        interactive: true,
+      });
+      if (unsupportedType) {
+        showStatus(`Unsupported diagram type: ${unsupportedType}. Flora currently supports flowcharts only.`);
+      } else if (warnings.length > 0) {
+        showStatus(warnings.map((w) => `Line ${w.line}: ${w.message}`).join(" · "));
+      } else {
+        hideStatus();
+      }
+    } catch (err) {
+      showStatus(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  function showStatus(message: string) {
+    status.textContent = message;
+    status.hidden = false;
+  }
+
+  function hideStatus() {
+    status.hidden = true;
+  }
+
+  async function syncHash() {
+    const hash = await encodeState(input.value, themeSelect.value);
+    history.replaceState(null, "", hash);
+  }
+
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  function scheduleRender() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      doRender();
+      syncHash();
+    }, 300);
+  }
+
+  input.addEventListener("input", scheduleRender);
+
+  themeSelect.addEventListener("change", () => {
+    doRender();
+    syncHash();
+  });
+
+  exampleSelect.addEventListener("change", () => {
+    input.value = EXAMPLES[exampleSelect.value];
+    doRender();
+    syncHash();
+  });
+
+  // Cmd/Ctrl+Enter renders immediately
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      clearTimeout(debounceTimer);
+      doRender();
+      syncHash();
+    }
+  });
+
+  // --- Toolbar actions ---
+
+  function flashLabel(button: HTMLButtonElement, label: string) {
+    const original = button.textContent;
+    button.textContent = label;
+    setTimeout(() => {
+      button.textContent = original;
+    }, 1500);
+  }
+
+  const shareBtn = document.getElementById("share-btn") as HTMLButtonElement;
+  shareBtn.addEventListener("click", async () => {
+    await syncHash();
+    await navigator.clipboard.writeText(location.href);
+    flashLabel(shareBtn, "Link copied!");
+  });
+
+  const embedBtn = document.getElementById("embed-btn") as HTMLButtonElement;
+  embedBtn.addEventListener("click", async () => {
+    const code = input.value.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
+    const snippet = `<div id="flora-diagram"></div>
+<script type="module">
+  import { render } from "https://esm.sh/@topspinj/flora";
+  render(\`${code}\`, document.getElementById("flora-diagram"), { theme: "${themeSelect.value}" });
+<\/script>`;
+    await navigator.clipboard.writeText(snippet);
+    flashLabel(embedBtn, "Snippet copied!");
+  });
+
+  const copySvgBtn = document.getElementById("copy-svg-btn") as HTMLButtonElement;
+  copySvgBtn.addEventListener("click", async () => {
+    const { svg } = toSVGString(input.value, { theme: themeSelect.value as any });
+    await navigator.clipboard.writeText(svg);
+    flashLabel(copySvgBtn, "Copied!");
+  });
+
+  function downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const downloadSvgBtn = document.getElementById("download-svg-btn") as HTMLButtonElement;
+  downloadSvgBtn.addEventListener("click", () => {
+    const { svg } = toSVGString(input.value, { theme: themeSelect.value as any });
+    downloadBlob(new Blob([svg], { type: "image/svg+xml" }), "flora-diagram.svg");
+  });
+
+  const downloadPngBtn = document.getElementById("download-png-btn") as HTMLButtonElement;
+  downloadPngBtn.addEventListener("click", async () => {
+    try {
+      const blob = await toPNG(input.value, { theme: themeSelect.value as any, scale: 2 });
+      downloadBlob(blob, "flora-diagram.png");
+    } catch (err) {
+      showStatus(err instanceof Error ? err.message : String(err));
+    }
+  });
+
+  // --- Resizable panes (desktop) ---
+
+  const handle = document.getElementById("resize-handle") as HTMLElement;
+  const editorPane = document.querySelector(".editor-pane") as HTMLElement;
+  const split = document.querySelector(".split") as HTMLElement;
+  let dragging = false;
+
+  handle.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    dragging = true;
+    handle.classList.add("active");
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    const splitRect = split.getBoundingClientRect();
+    const newWidth = e.clientX - splitRect.left;
+    const minW = 200;
+    const maxW = splitRect.width - 200;
+    editorPane.style.width = Math.max(minW, Math.min(maxW, newWidth)) + "px";
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove("active");
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  });
+
+  // --- Init: load from URL hash, else default example ---
+
+  (async () => {
+    const state = await decodeState(location.hash);
+    if (state) {
+      input.value = state.code;
+      if ([...themeSelect.options].some((o) => o.value === state.theme)) {
+        themeSelect.value = state.theme;
+      }
+    } else {
+      input.value = EXAMPLES.pipeline;
+    }
+    doRender();
+  })();
+</script>
+
+<style>
+  .play {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .toolbar-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .toolbar label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .toolbar select {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .btn {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: white;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .btn:hover {
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .btn-primary {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent-hover);
+    color: white;
+  }
+
+  .split {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .editor-pane {
+    width: 40%;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-code-bg);
+  }
+
+  .resize-handle {
+    width: 5px;
+    cursor: col-resize;
+    background: var(--color-border);
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .resize-handle:hover,
+  .resize-handle.active {
+    background: var(--color-accent);
+  }
+
+  textarea {
+    flex: 1;
+    resize: none;
+    border: none;
+    outline: none;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-code-text);
+    background: transparent;
+    tab-size: 2;
+  }
+
+  .preview-pane {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    position: relative;
+  }
+
+  #diagram {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .status {
+    font-size: 13px;
+    color: var(--color-red);
+    padding: 8px 16px;
+    border-top: 1px solid var(--color-border);
+    background: #fef2f2;
+  }
+
+  .hint {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    padding: 8px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  @media (max-width: 720px) {
+    .split {
+      flex-direction: column;
+    }
+
+    .resize-handle {
+      display: none;
+    }
+
+    .editor-pane {
+      width: 100% !important;
+      height: 40%;
+      min-height: 160px;
+    }
+
+    .hint {
+      display: none;
+    }
+  }
+</style>

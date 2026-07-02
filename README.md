@@ -4,6 +4,10 @@ Beautiful, interactive diagrams from Mermaid-compatible syntax.
 
 Flora takes the text-to-diagram syntax you already know from Mermaid and produces polished, interactive SVGs with better typography, colors, and hover/click/zoom out of the box.
 
+## Try it
+
+Open the [playground](https://florajs.dev/playground/) — write a diagram, watch it render live, and share it with a link. Diagrams are encoded in the URL fragment, so no account or server is involved.
+
 ## Install
 
 ```bash
