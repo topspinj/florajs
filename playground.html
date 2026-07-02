@@ -164,6 +164,18 @@
       border-top: 1px solid #e2e4ea;
       background: #fafbfc;
     }
+    .diagnostics {
+      max-height: 120px;
+      overflow-y: auto;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      padding: 8px 16px;
+      border-top: 1px solid #e2e4ea;
+      background: #fffbeb;
+    }
+    .diagnostics .diag-error { color: #dc2626; }
+    .diagnostics .diag-info { color: #6b7280; }
   </style>
 </head>
 <body>
@@ -206,6 +218,7 @@
         </span>
       </div>
       <div id="diagram"></div>
+      <div class="diagnostics" id="diagnostics" hidden></div>
       <div class="hint">Click a node to highlight its lineage. Click background or press Escape to clear.</div>
     </div>
   </div>
@@ -217,16 +230,37 @@
     const themeSelect = document.getElementById("theme");
     const renderBtn = document.getElementById("render-btn");
     const diagram = document.getElementById("diagram");
+    const diagnostics = document.getElementById("diagnostics");
+
+    function showDiagnostics(warnings, unsupportedType) {
+      diagnostics.innerHTML = "";
+      const items = unsupportedType
+        ? [{ severity: "error", line: 1, message: `Unsupported diagram type: ${unsupportedType}` }]
+        : warnings;
+      if (items.length === 0) {
+        diagnostics.hidden = true;
+        return;
+      }
+      const sorted = [...items].sort((a, b) => (a.severity === b.severity ? a.line - b.line : a.severity === "error" ? -1 : 1));
+      for (const w of sorted) {
+        const div = document.createElement("div");
+        div.className = w.severity === "error" ? "diag-error" : "diag-info";
+        div.textContent = `${w.severity === "error" ? "⚠" : "ℹ"} Line ${w.line}: ${w.message}`;
+        diagnostics.appendChild(div);
+      }
+      diagnostics.hidden = false;
+    }
 
     function doRender() {
       diagram.innerHTML = "";
-      render(input.value, diagram, {
+      const { warnings, unsupportedType } = render(input.value, diagram, {
         theme: themeSelect.value,
         interactive: true,
         onHighlight: (nodeId, upstream, downstream) => {
           console.log("Highlighted:", nodeId, "| Upstream:", upstream, "| Downstream:", downstream);
         }
       });
+      showDiagnostics(warnings, unsupportedType);
     }
 
     renderBtn.addEventListener("click", doRender);

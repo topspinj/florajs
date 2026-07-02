@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import rehypeFlora from "../../src/rehype.js";
+import { FloraParseError } from "../../src/index.js";
 
 function makeCodeBlock(lang: string, code: string) {
   return {
@@ -76,6 +77,37 @@ describe("rehypeFlora", () => {
   it("supports custom languages option", () => {
     const tree = makeCodeBlock("graph", "flowchart TD\n  A --> B");
     const plugin = rehypeFlora({ languages: ["graph"] });
+    plugin(tree as any);
+
+    const div = tree.children[0] as any;
+    expect(div.tagName).toBe("div");
+  });
+
+  it("throws FloraParseError on parse errors by default (strict)", () => {
+    const tree = makeCodeBlock("flora", "flowchart LR\n  A --> B C");
+    const plugin = rehypeFlora();
+    expect(() => plugin(tree as any)).toThrow(FloraParseError);
+  });
+
+  it("throws FloraParseError on unsupported diagram types by default (strict)", () => {
+    const tree = makeCodeBlock("flora", "sequenceDiagram\n  A->>B: hi");
+    const plugin = rehypeFlora();
+    expect(() => plugin(tree as any)).toThrow(/sequenceDiagram/);
+  });
+
+  it("renders best-effort with strict: false", () => {
+    const tree = makeCodeBlock("flora", "flowchart LR\n  A --> B C\n  D --> E");
+    const plugin = rehypeFlora({ strict: false });
+    plugin(tree as any);
+
+    const div = tree.children[0] as any;
+    expect(div.tagName).toBe("div");
+    expect(div.children[0].value).toContain("D");
+  });
+
+  it("does not throw on info-only diagnostics in strict mode", () => {
+    const tree = makeCodeBlock("flora", "flowchart LR\n  A --> B\n  classDef red fill:#f00");
+    const plugin = rehypeFlora();
     plugin(tree as any);
 
     const div = tree.children[0] as any;
