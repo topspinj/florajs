@@ -42,11 +42,11 @@ Parse and render a diagram into a DOM element.
 
 Returns an SVGSVGElement without attaching it to the DOM.
 
-### `toAST(input)`
+### `toAST(input, options?)`
 
 Parse input and return the AST without rendering.
 
-### `toLayout(input)`
+### `toLayout(input, options?)`
 
 Parse input and return computed node/edge positions.
 
@@ -64,11 +64,21 @@ Parse input and return computed node/edge positions.
     shadow: true,
   },
   interactive: true,
+  strict: false, // throw FloraParseError on parse errors instead of rendering best-effort
   onNodeClick: (nodeId) => console.log("clicked", nodeId),
   onNodeHover: (nodeId) => console.log("hovered", nodeId),
   onHighlight: (nodeId, upstream, downstream) => console.log("lineage", nodeId),
 }
 ```
+
+## Error handling
+
+Flora's contract is **never blank, never silently wrong**:
+
+- A line the parser can't understand is skipped whole and reported as a diagnostic (`{ line, col, message, severity }`) — it is never reinterpreted as extra nodes. Everything valid still renders.
+- Mermaid styling and behavior directives (`classDef`, `class`, `style`, `linkStyle`, `click`, `%%{init}%%`) are recognized and deliberately ignored with `info` diagnostics — Flora handles styling through themes and clicks through `onNodeClick`.
+- If nothing parses, `render()` shows an error card listing the diagnostics instead of a blank SVG.
+- Pass `strict: true` to any API function to throw a `FloraParseError` (all diagnostics on `.warnings`) instead of rendering best-effort. The rehype plugin is strict by default so a broken diagram fails your build; pass `strict: false` to opt out.
 
 ## Node Shapes
 

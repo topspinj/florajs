@@ -118,15 +118,26 @@ export type ThemePreset = "default" | "tufte" | "digital" | "sketch";
 export interface FloraOptions {
   theme?: ThemePreset | Partial<FloraTheme>;
   interactive?: boolean;
+  /** Throw a FloraParseError instead of rendering when the input has error-severity diagnostics. */
+  strict?: boolean;
   onNodeClick?: (nodeId: string) => void;
   onNodeHover?: (nodeId: string | null) => void;
   onHighlight?: (nodeId: string, upstream: string[], downstream: string[]) => void;
 }
 
+/**
+ * "error"  — the input could not be understood; the affected line was skipped
+ *            and the rendered diagram may be missing it.
+ * "info"   — the input was understood and deliberately ignored (e.g. Mermaid
+ *            styling directives, which Flora replaces with themes).
+ */
+export type ParseWarningSeverity = "error" | "info";
+
 export interface ParseWarning {
   line: number;
   col: number;
   message: string;
+  severity: ParseWarningSeverity;
 }
 
 export interface ParseResult {

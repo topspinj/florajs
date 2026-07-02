@@ -101,11 +101,113 @@ describe("fault-tolerant parser", () => {
     }
   });
 
-  it("still falls back to flowchart for genuinely unknown input", () => {
+  it("treats an unknown single-word header as an unsupported type, not a flowchart", () => {
     const { ast } = parse(`somethingRandom
       A --> B`);
 
+    expect(ast.type).toBe("unsupported");
+    if (ast.type === "unsupported") {
+      expect(ast.detectedType).toBe("somethingRandom");
+    }
+  });
+
+  it("parses a headerless fragment as a flowchart with an info diagnostic", () => {
+    const { ast, warnings } = parse(`A --> B
+      B --> C`);
+
     expect(ast.type).toBe("flowchart");
+    if (ast.type === "flowchart") {
+      expect(ast.nodes.map((n) => n.id).sort()).toEqual(["A", "B", "C"]);
+      expect(ast.edges).toHaveLength(2);
+    }
+    expect(warnings.some((w) => w.severity === "info" && w.message.includes("No diagram type header"))).toBe(true);
+  });
+
+  it("never invents nodes from prose", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      this is not a diagram at all
+      A --> B`);
+
+    expect(ast.type).toBe("flowchart");
+    if (ast.type === "flowchart") {
+      // The prose line contributes nothing; the valid line still parses
+      expect(ast.nodes.map((n) => n.id).sort()).toEqual(["A", "B"]);
+      expect(ast.edges).toHaveLength(1);
+    }
+    expect(warnings.some((w) => w.severity === "error")).toBe(true);
+  });
+
+  it("skips a whole invalid line instead of committing part of it", () => {
+    const { ast } = parse(`flowchart LR
+      A --> B C
+      D --> E`);
+
+    if (ast.type === "flowchart") {
+      // Nothing from the broken line — not even A or B
+      expect(ast.nodes.map((n) => n.id).sort()).toEqual(["D", "E"]);
+      expect(ast.edges).toHaveLength(1);
+    }
+  });
+
+  it("ignores Mermaid styling directives with info diagnostics instead of misparsing them", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      A --> B
+      classDef red fill:#f00
+      class A red
+      style B fill:#f9f,stroke:#333
+      linkStyle 0 stroke:#f00
+      click A callback`);
+
+    expect(ast.type).toBe("flowchart");
+    if (ast.type === "flowchart") {
+      expect(ast.nodes.map((n) => n.id).sort()).toEqual(["A", "B"]);
+      expect(ast.edges).toHaveLength(1);
+    }
+    const infos = warnings.filter((w) => w.severity === "info");
+    expect(infos).toHaveLength(5);
+    expect(warnings.filter((w) => w.severity === "error")).toHaveLength(0);
+  });
+
+  it("still allows a directive keyword as a node id when it has a shape", () => {
+    const { ast } = parse(`flowchart LR
+      style[Style Guide] --> B`);
+
+    if (ast.type === "flowchart") {
+      expect(ast.nodes.find((n) => n.id === "style")?.label).toBe("Style Guide");
+      expect(ast.edges).toHaveLength(1);
+    }
+  });
+
+  it("emits an info diagnostic for %%{init}%% directives", () => {
+    const { warnings } = parse(`flowchart LR
+      %%{init: {"theme": "dark"}}%%
+      A --> B`);
+
+    expect(warnings.some((w) => w.severity === "info" && w.message.includes("init directives"))).toBe(true);
+  });
+
+  it("parses arrows written without spaces and keeps kebab-case ids", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      my-node-->other-node
+      other-node-.->third`);
+
+    if (ast.type === "flowchart") {
+      expect(ast.nodes.map((n) => n.id).sort()).toEqual(["my-node", "other-node", "third"]);
+      expect(ast.edges).toHaveLength(2);
+      expect(ast.edges[1]!.style).toBe("dotted");
+    }
+    expect(warnings.filter((w) => w.severity === "error")).toHaveLength(0);
+  });
+
+  it("treats semicolons as statement terminators", () => {
+    const { ast, warnings } = parse(`graph LR; A-->B; B-->C;`);
+
+    expect(ast.type).toBe("flowchart");
+    if (ast.type === "flowchart") {
+      expect(ast.nodes.map((n) => n.id).sort()).toEqual(["A", "B", "C"]);
+      expect(ast.edges).toHaveLength(2);
+    }
+    expect(warnings.filter((w) => w.severity === "error")).toHaveLength(0);
   });
 
   it("handles unterminated subgraph", () => {

@@ -39,6 +39,17 @@ export interface TokenizeResult {
 const KEYWORDS = new Set(["flowchart", "graph", "subgraph", "end"]);
 const DIRECTIONS = new Set(["TB", "TD", "BT", "LR", "RL"]);
 
+// Mermaid directives Flora understands but deliberately does not act on.
+// Styling is handled by themes; click bindings by the onNodeClick option.
+const IGNORED_DIRECTIVES = new Map<string, string>([
+  ["classDef", "styling directive — Flora handles styling through themes"],
+  ["class", "styling directive — Flora handles styling through themes"],
+  ["style", "styling directive — Flora handles styling through themes"],
+  ["linkStyle", "styling directive — Flora handles styling through themes"],
+  ["click", "click binding — use the onNodeClick option instead"],
+  ["direction", "subgraph direction is not supported yet"],
+]);
+
 export function tokenize(input: string): TokenizeResult {
   const tokens: Token[] = [];
   const warnings: ParseWarning[] = [];
@@ -70,6 +81,14 @@ export function tokenize(input: string): TokenizeResult {
 
   function skipComment(): boolean {
     if (input[pos] === "%" && input[pos + 1] === "%") {
+      if (input[pos + 2] === "{") {
+        warnings.push({
+          line,
+          col,
+          message: "Mermaid init directives are ignored — use Flora themes instead",
+          severity: "info",
+        });
+      }
       while (pos < input.length && input[pos] !== "\n") {
         advance();
       }
@@ -78,12 +97,30 @@ export function tokenize(input: string): TokenizeResult {
     return false;
   }
 
+  function skipRestOfLine(): void {
+    while (pos < input.length && input[pos] !== "\n") {
+      advance();
+    }
+  }
+
+  function atLineStart(): boolean {
+    return tokens.length === 0 || tokens[tokens.length - 1]!.type === "newline";
+  }
+
   function readWord(): string {
     let word = "";
     while (
       pos < input.length &&
       /[a-zA-Z0-9_-]/.test(input[pos]!)
     ) {
+      // A hyphen can appear inside an id (kebab-case), but "--", "-." and "->"
+      // start an arrow, as in "A-->B" written without spaces.
+      if (
+        input[pos] === "-" &&
+        (input[pos + 1] === "-" || input[pos + 1] === "." || input[pos + 1] === ">")
+      ) {
+        break;
+      }
       word += advance();
     }
     return word;
@@ -104,6 +141,7 @@ export function tokenize(input: string): TokenizeResult {
         line: startLine,
         col: startCol,
         message: `Unterminated string (expected closing ${quote})`,
+        severity: "error",
       });
     }
     return str;
@@ -122,6 +160,7 @@ export function tokenize(input: string): TokenizeResult {
           line: startLine,
           col: startCol,
           message: `Unterminated ${open}${close} (missing closing ${close})`,
+          severity: "error",
         });
         break;
       }
@@ -135,6 +174,7 @@ export function tokenize(input: string): TokenizeResult {
         line: startLine,
         col: startCol,
         message: `Unterminated ${open}${close} (missing closing ${close})`,
+        severity: "error",
       });
     }
     return text;
@@ -150,9 +190,9 @@ export function tokenize(input: string): TokenizeResult {
 
     if (skipComment()) continue;
 
-    if (ch === "\n") {
+    if (ch === "\n" || ch === ";") {
       advance();
-      tokens.push({ type: "newline", value: "\n", line: startLine, col: startCol });
+      tokens.push({ type: "newline", value: ch, line: startLine, col: startCol });
       continue;
     }
 
@@ -184,6 +224,7 @@ export function tokenize(input: string): TokenizeResult {
           line: pipeStartLine,
           col: pipeStartCol,
           message: "Unterminated edge label (missing closing |)",
+          severity: "error",
         });
       }
       tokens.push({ type: "pipe_text", value: text, line: startLine, col: startCol });
@@ -250,6 +291,22 @@ export function tokenize(input: string): TokenizeResult {
 
     if (/[a-zA-Z_]/.test(ch)) {
       const word = readWord();
+      // A directive keyword at the start of a line is recognized and skipped,
+      // unless it is immediately followed by a shape bracket (then it's a node id).
+      if (
+        atLineStart() &&
+        IGNORED_DIRECTIVES.has(word) &&
+        !/[[({]/.test(peek())
+      ) {
+        warnings.push({
+          line: startLine,
+          col: startCol,
+          message: `'${word}' ignored: ${IGNORED_DIRECTIVES.get(word)}`,
+          severity: "info",
+        });
+        skipRestOfLine();
+        continue;
+      }
       if (KEYWORDS.has(word)) {
         tokens.push({ type: "keyword", value: word, line: startLine, col: startCol });
       } else if (DIRECTIONS.has(word)) {
@@ -272,6 +329,7 @@ export function tokenize(input: string): TokenizeResult {
       line: startLine,
       col: startCol,
       message: `Unexpected character '${skipped}'`,
+      severity: "error",
     });
   }
 

@@ -169,7 +169,13 @@ import Layout from "../layouts/Layout.astro";
       if (unsupportedType) {
         showStatus(`Unsupported diagram type: ${unsupportedType}. Flora currently supports flowcharts only.`);
       } else if (warnings.length > 0) {
-        showStatus(warnings.map((w) => `Line ${w.line}: ${w.message}`).join(" · "));
+        const errors = warnings.filter((w) => w.severity === "error");
+        const infos = warnings.filter((w) => w.severity !== "error");
+        showStatus(
+          [...errors, ...infos]
+            .map((w) => `${w.severity === "error" ? "⚠" : "ℹ"} Line ${w.line}: ${w.message}`)
+            .join(" · "),
+        );
       } else {
         hideStatus();
       }

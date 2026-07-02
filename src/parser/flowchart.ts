@@ -77,10 +77,39 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
     }
   }
 
-  function parseNodeDefinition(id: string): void {
-    const shape = inferShape(tokens, pos);
-    if (shape) {
-      nodes.set(id, { id, label: shape.label, shape: shape.shape });
+  function isStatementTerminator(token: Token): boolean {
+    return (
+      token.type === "newline" ||
+      token.type === "eof" ||
+      (token.type === "keyword" && token.value === "end")
+    );
+  }
+
+  // Parse a single statement (node definition + optional edge chain).
+  //
+  // The statement is parsed into pending collections and only committed to
+  // the diagram if the whole line is understood. A line the parser cannot
+  // make sense of contributes nothing and produces one error diagnostic —
+  // it is never reinterpreted as extra nodes.
+  //
+  // Returns the node IDs committed (empty when the line was abandoned).
+  function parseStatement(): string[] {
+    const nodeIds: string[] = [];
+    const definedNodes = new Map<string, FlowchartNode>();
+    const referencedIds = new Set<string>();
+    const pendingEdges: FlowchartEdge[] = [];
+    const currentToken = current();
+    let currentId = currentToken.value;
+    pos++;
+    nodeIds.push(currentId);
+
+    function parseNodeDefinition(id: string): void {
+      const shape = inferShape(tokens, pos);
+      if (!shape) {
+        referencedIds.add(id);
+        return;
+      }
+      definedNodes.set(id, { id, label: shape.label, shape: shape.shape });
       while (
         pos < tokens.length &&
         tokens[pos]!.type !== "newline" &&
@@ -100,19 +129,18 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
         }
         pos++;
       }
-    } else {
-      ensureNode(id);
     }
-  }
 
-  // Parse a single statement (node definition + optional edge chain).
-  // Returns the node IDs encountered.
-  function parseStatement(): string[] {
-    const nodeIds: string[] = [];
-    const currentToken = current();
-    let currentId = currentToken.value;
-    pos++;
-    nodeIds.push(currentId);
+    function abandon(message: string, at: Token): [] {
+      warnings.push({
+        line: at.line,
+        col: at.col,
+        message,
+        severity: "error",
+      });
+      skipToNextLine();
+      return [];
+    }
 
     try {
       parseNodeDefinition(currentId);
@@ -133,10 +161,10 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
           pos++;
           nodeIds.push(nextId);
           parseNodeDefinition(nextId);
-          ensureNode(currentId);
-          ensureNode(nextId);
+          referencedIds.add(currentId);
+          referencedIds.add(nextId);
 
-          edges.push({
+          pendingEdges.push({
             from: currentId,
             to: nextId,
             label: edgeLabel,
@@ -144,30 +172,35 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
           });
 
           currentId = nextId;
-        } else if (current().type !== "newline" && current().type !== "eof") {
-          warnings.push({
-            line: current().line,
-            col: current().col,
-            message: `Expected node identifier after arrow, got '${current().value || current().type}'`,
-          });
-          skipToNextLine();
-          break;
+        } else if (!isStatementTerminator(current())) {
+          return abandon(
+            `Expected node identifier after arrow, got '${current().value || current().type}' — line skipped`,
+            current(),
+          );
         } else {
-          warnings.push({
-            line: currentToken.line,
-            col: currentToken.col,
-            message: `Dangling arrow with no target node`,
-          });
-          break;
+          return abandon("Dangling arrow with no target node — line skipped", currentToken);
         }
       }
+
+      if (!isStatementTerminator(current())) {
+        return abandon(
+          `Could not parse this line — unexpected '${current().value || current().type}' after '${currentId}'`,
+          current(),
+        );
+      }
     } catch {
-      warnings.push({
-        line: currentToken.line,
-        col: currentToken.col,
-        message: `Could not parse line starting with '${currentId}'`,
-      });
-      skipToNextLine();
+      return abandon(`Could not parse line starting with '${currentId}' — line skipped`, currentToken);
+    }
+
+    // Line fully understood — commit it.
+    for (const [id, node] of definedNodes) {
+      nodes.set(id, node);
+    }
+    for (const id of referencedIds) {
+      ensureNode(id);
+    }
+    for (const edge of pendingEdges) {
+      edges.push(edge);
     }
 
     return nodeIds;
@@ -189,6 +222,7 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
           line: lineStartToken.line,
           col: lineStartToken.col,
           message: `Unterminated subgraph '${id}' (missing 'end')`,
+          severity: "error",
         });
         break;
       }
@@ -212,15 +246,16 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
         continue;
       }
 
-      // Skip unexpected tokens
+      // Line starts with something that isn't a statement — skip the line
       if (current().type !== "newline" && current().type !== "eof") {
         const unexpected = current();
         warnings.push({
           line: unexpected.line,
           col: unexpected.col,
-          message: `Unexpected ${unexpected.type}${unexpected.value ? ` '${unexpected.value}'` : ""} in subgraph '${id}'`,
+          message: `Could not parse this line in subgraph '${id}' — unexpected ${unexpected.type}${unexpected.value ? ` '${unexpected.value}'` : ""}`,
+          severity: "error",
         });
-        pos++;
+        skipToNextLine();
       }
     }
     if (current().type === "keyword" && current().value === "end") pos++;
@@ -254,14 +289,15 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
       continue;
     }
 
-    // Unexpected token — skip it and warn
+    // Line starts with something that isn't a statement — skip the line
     const unexpected = current();
     warnings.push({
       line: unexpected.line,
       col: unexpected.col,
-      message: `Unexpected ${unexpected.type}${unexpected.value ? ` '${unexpected.value}'` : ""}`,
+      message: `Could not parse this line — unexpected ${unexpected.type}${unexpected.value ? ` '${unexpected.value}'` : ""}`,
+      severity: "error",
     });
-    pos++;
+    skipToNextLine();
   }
 
   return {
