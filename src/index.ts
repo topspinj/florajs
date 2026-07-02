@@ -52,6 +52,76 @@ function renderUnsupportedSVGString(detectedType: string, theme: FloraTheme): st
     + `</svg>`;
 }
 
+const MAX_SHOWN_ERRORS = 3;
+
+function parseFailureLines(warnings: ParseWarning[]): string[] {
+  const errors = warnings.filter((w) => w.severity === "error");
+  const lines = errors.slice(0, MAX_SHOWN_ERRORS).map((w) => `Line ${w.line}: ${w.message}`);
+  if (errors.length > MAX_SHOWN_ERRORS) {
+    lines.push(`…and ${errors.length - MAX_SHOWN_ERRORS} more`);
+  }
+  return lines;
+}
+
+function renderParseFailureSVG(warnings: ParseWarning[], theme: FloraTheme): SVGSVGElement {
+  const lines = parseFailureLines(warnings);
+  const height = 70 + lines.length * 24;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("height", "100%");
+  svg.setAttribute("viewBox", `0 0 560 ${height}`);
+  svg.style.background = theme.background;
+
+  const title = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  title.setAttribute("x", "280");
+  title.setAttribute("y", "36");
+  title.setAttribute("text-anchor", "middle");
+  title.setAttribute("font-family", theme.fontFamily);
+  title.setAttribute("font-size", String(theme.fontSize));
+  title.setAttribute("font-weight", "600");
+  title.setAttribute("fill", theme.nodeColors.text);
+  title.textContent = "Could not parse diagram";
+  svg.appendChild(title);
+
+  lines.forEach((lineText, i) => {
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", "280");
+    text.setAttribute("y", String(66 + i * 24));
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("font-family", theme.fontFamily);
+    text.setAttribute("font-size", String(theme.fontSize - 2));
+    text.setAttribute("fill", theme.edgeColors.label);
+    text.textContent = lineText;
+    svg.appendChild(text);
+  });
+
+  return svg;
+}
+
+function renderParseFailureSVGString(warnings: ParseWarning[], theme: FloraTheme): string {
+  const lines = parseFailureLines(warnings);
+  const height = 70 + lines.length * 24;
+  const body = lines
+    .map(
+      (lineText, i) =>
+        `<text x="280" y="${66 + i * 24}" text-anchor="middle" font-family="${escapeXml(theme.fontFamily)}" font-size="${theme.fontSize - 2}" fill="${escapeXml(theme.edgeColors.label)}">${escapeXml(lineText)}</text>`,
+    )
+    .join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 560 ${height}" style="background:${escapeXml(theme.background)}">`
+    + `<text x="280" y="36" text-anchor="middle" font-family="${escapeXml(theme.fontFamily)}" font-size="${theme.fontSize}" font-weight="600" fill="${escapeXml(theme.nodeColors.text)}">Could not parse diagram</text>`
+    + body
+    + `</svg>`;
+}
+
+function isParseFailure(ast: DiagramAST, warnings: ParseWarning[]): boolean {
+  return (
+    ast.type === "flowchart" &&
+    ast.nodes.length === 0 &&
+    warnings.some((w) => w.severity === "error")
+  );
+}
+
 export interface RenderResult {
   warnings: ParseWarning[];
   unsupportedType?: string;
@@ -68,6 +138,13 @@ export function render(input: string, target: HTMLElement, options: FloraOptions
   }
 
   const theme = resolveTheme(options.theme);
+
+  if (isParseFailure(ast, warnings)) {
+    target.innerHTML = "";
+    target.appendChild(renderParseFailureSVG(warnings, theme));
+    return { warnings };
+  }
+
   const layout = computeLayout(ast, theme);
   const svg = renderSVG(layout, options);
 
@@ -99,6 +176,9 @@ export function toSVGElement(input: string, options: FloraOptions = {}): { svg: 
   if (ast.type === "unsupported") {
     return { svg: renderUnsupportedSVG(ast.detectedType, resolveTheme(options.theme)), warnings, unsupportedType: ast.detectedType };
   }
+  if (isParseFailure(ast, warnings)) {
+    return { svg: renderParseFailureSVG(warnings, resolveTheme(options.theme)), warnings };
+  }
   const layout = computeLayout(ast);
   const svg = renderSVG(layout, options);
   return { svg, warnings };
@@ -111,6 +191,9 @@ export function toSVGString(input: string, options: RenderSVGStringOptions & { s
     return { svg: renderUnsupportedSVGString(ast.detectedType, resolveTheme(options.theme)), warnings, unsupportedType: ast.detectedType };
   }
   const theme = resolveTheme(options.theme);
+  if (isParseFailure(ast, warnings)) {
+    return { svg: renderParseFailureSVGString(warnings, theme), warnings };
+  }
   const layout = computeLayout(ast, theme);
   const svg = renderSVGString(layout, options);
   return { svg, warnings };

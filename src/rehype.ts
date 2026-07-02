@@ -67,6 +67,8 @@ export default function rehypeFlora(options: RehypeFloraOptions = {}) {
       const { ast, warnings } = parse(source);
       checkStrict(strict, warnings, ast.type === "unsupported" ? ast.detectedType : undefined);
       if (ast.type === "unsupported") return;
+      // Nothing parsed — leave the code block so readers at least see the source
+      if (ast.nodes.length === 0 && warnings.some((w) => w.severity === "error")) return;
       const theme = resolveTheme(options.theme);
       const layout = computeLayout(ast, theme);
       const svgString = renderSVGString(layout, { theme: options.theme });
