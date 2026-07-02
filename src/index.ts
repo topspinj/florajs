@@ -7,6 +7,7 @@ import { tufteTheme } from "./themes/tufte.js";
 import { digitalTheme } from "./themes/digital.js";
 import { resolveTheme } from "./themes/index.js";
 import type { FloraOptions, DiagramAST, FloraTheme, LayoutResult, ParseWarning } from "./types.js";
+import { checkStrict } from "./errors.js";
 
 function escapeXml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -58,6 +59,7 @@ export interface RenderResult {
 
 export function render(input: string, target: HTMLElement, options: FloraOptions = {}): RenderResult {
   const { ast, warnings } = parse(input);
+  checkStrict(options.strict, warnings, ast.type === "unsupported" ? ast.detectedType : undefined);
 
   if (ast.type === "unsupported") {
     target.innerHTML = "";
@@ -75,12 +77,15 @@ export function render(input: string, target: HTMLElement, options: FloraOptions
   return { warnings };
 }
 
-export function toAST(input: string): { ast: DiagramAST; warnings: ParseWarning[] } {
-  return parse(input);
+export function toAST(input: string, options: { strict?: boolean } = {}): { ast: DiagramAST; warnings: ParseWarning[] } {
+  const result = parse(input);
+  checkStrict(options.strict, result.warnings, result.ast.type === "unsupported" ? result.ast.detectedType : undefined);
+  return result;
 }
 
-export function toLayout(input: string): { layout: LayoutResult; warnings: ParseWarning[]; unsupportedType?: string } {
+export function toLayout(input: string, options: { strict?: boolean } = {}): { layout: LayoutResult; warnings: ParseWarning[]; unsupportedType?: string } {
   const { ast, warnings } = parse(input);
+  checkStrict(options.strict, warnings, ast.type === "unsupported" ? ast.detectedType : undefined);
   if (ast.type === "unsupported") {
     return { layout: { nodes: [], edges: [], subgraphs: [], width: 0, height: 0 }, warnings, unsupportedType: ast.detectedType };
   }
@@ -90,6 +95,7 @@ export function toLayout(input: string): { layout: LayoutResult; warnings: Parse
 
 export function toSVGElement(input: string, options: FloraOptions = {}): { svg: SVGSVGElement; warnings: ParseWarning[]; unsupportedType?: string } {
   const { ast, warnings } = parse(input);
+  checkStrict(options.strict, warnings, ast.type === "unsupported" ? ast.detectedType : undefined);
   if (ast.type === "unsupported") {
     return { svg: renderUnsupportedSVG(ast.detectedType, resolveTheme(options.theme)), warnings, unsupportedType: ast.detectedType };
   }
@@ -98,8 +104,9 @@ export function toSVGElement(input: string, options: FloraOptions = {}): { svg: 
   return { svg, warnings };
 }
 
-export function toSVGString(input: string, options: RenderSVGStringOptions = {}): { svg: string; warnings: ParseWarning[]; unsupportedType?: string } {
+export function toSVGString(input: string, options: RenderSVGStringOptions & { strict?: boolean } = {}): { svg: string; warnings: ParseWarning[]; unsupportedType?: string } {
   const { ast, warnings } = parse(input);
+  checkStrict(options.strict, warnings, ast.type === "unsupported" ? ast.detectedType : undefined);
   if (ast.type === "unsupported") {
     return { svg: renderUnsupportedSVGString(ast.detectedType, resolveTheme(options.theme)), warnings, unsupportedType: ast.detectedType };
   }
@@ -157,6 +164,7 @@ export async function toPNG(input: string, options: ToPNGOptions = {}): Promise<
   });
 }
 
+export { FloraParseError } from "./errors.js";
 export { parse } from "./parser/index.js";
 export { computeLayout } from "./layout/index.js";
 export { renderSVG } from "./renderer/index.js";
@@ -182,6 +190,7 @@ export type {
   LayoutEdge,
   LayoutSubgraph,
   ParseWarning,
+  ParseWarningSeverity,
   ParseResult,
   ThemePreset,
   UnsupportedDiagramAST,

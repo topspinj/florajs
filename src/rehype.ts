@@ -2,6 +2,7 @@ import { parse } from "./parser/index.js";
 import { computeLayout } from "./layout/index.js";
 import { renderSVGString } from "./renderer/svg-string.js";
 import { resolveTheme } from "./themes/index.js";
+import { checkStrict } from "./errors.js";
 import type { ThemePreset, FloraTheme } from "./types.js";
 
 export interface RehypeFloraOptions {
@@ -10,6 +11,12 @@ export interface RehypeFloraOptions {
   className?: string;
   /** Code block languages to match. Defaults to ["flora", "flowchart"]. */
   languages?: string[];
+  /**
+   * Fail the build (throw FloraParseError) when a diagram has parse errors
+   * or an unsupported type, instead of publishing a silently wrong or
+   * missing diagram. Defaults to true; set to false to render best-effort.
+   */
+  strict?: boolean;
 }
 
 interface HastNode {
@@ -50,13 +57,15 @@ function visit(node: HastNode, fn: (node: HastNode, index: number, parent: HastN
 export default function rehypeFlora(options: RehypeFloraOptions = {}) {
   const languages = options.languages ?? ["flora", "flowchart"];
   const className = options.className ?? "flora-diagram";
+  const strict = options.strict ?? true;
 
   return (tree: HastNode) => {
     visit(tree, (node, index, parent) => {
       if (!isFloraCodeBlock(node, languages)) return;
 
       const source = getCodeText(node.children![0]!);
-      const { ast } = parse(source);
+      const { ast, warnings } = parse(source);
+      checkStrict(strict, warnings, ast.type === "unsupported" ? ast.detectedType : undefined);
       if (ast.type === "unsupported") return;
       const theme = resolveTheme(options.theme);
       const layout = computeLayout(ast, theme);
