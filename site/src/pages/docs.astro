@@ -24,6 +24,7 @@ const base = import.meta.env.BASE_URL;
           <h3>Integrations</h3>
           <a href="#markdown">Markdown / Rehype</a>
           <a href="#react">React</a>
+          <a href="#cdn">CDN / Web Component</a>
         </div>
         <div class="sidebar-section">
           <h3>API Reference</h3>
@@ -306,6 +307,69 @@ flowchart LR
     &lt;/div&gt;
   );
 &#125;</code></pre>
+      </section>
+
+      <!-- CDN / Web Component -->
+      <section id="cdn">
+        <h2>CDN / Web Component</h2>
+        <p>
+          Flora ships a single-file browser bundle so you can embed diagrams in any HTML page with
+          zero build step. The bundle exposes the full core API on <code>window.Flora</code> and
+          registers a <code>&lt;flora-diagram&gt;</code> custom element.
+        </p>
+
+        <h3>Usage</h3>
+        <pre><code>&lt;<span class="t-fn">script</span> src=<span class="t-str">"https://unpkg.com/@topspinj/flora"</span>&gt;&lt;/<span class="t-fn">script</span>&gt;
+
+&lt;<span class="t-fn">flora-diagram</span> theme=<span class="t-str">"default"</span> interactive&gt;
+flowchart TD
+  A[Dashboard] --&gt; B[API]
+  B --&gt; C[(Database)]
+&lt;/<span class="t-fn">flora-diagram</span>&gt;</code></pre>
+        <p>
+          The element reads its text content as diagram source and renders into a shadow root, so the
+          source stays in the light DOM. It re-renders automatically when the text content or
+          attributes change (via a <code>MutationObserver</code>).
+        </p>
+
+        <h3>Attributes</h3>
+        <div class="shape-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Attribute</th>
+                <th>Values</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>theme</code></td>
+                <td><code>default | tufte | digital | sketch</code></td>
+                <td>Theme preset name. Unknown names fall back to <code>default</code>.</td>
+              </tr>
+              <tr>
+                <td><code>interactive</code></td>
+                <td>boolean attribute</td>
+                <td>Enable zoom, pan, hover, click, and lineage highlighting. Present = on; <code>interactive="false"</code> = off.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3><code>window.Flora</code></h3>
+        <p>
+          Every export from the core package is available on the global, so you can also drive
+          rendering imperatively without the custom element:
+        </p>
+        <pre><code>Flora.<span class="t-fn">render</span>(<span class="t-str">"flowchart LR\n  A --&gt; B"</span>, document.<span class="t-fn">getElementById</span>(<span class="t-str">"diagram"</span>));
+Flora.<span class="t-fn">toSVGString</span>(<span class="t-str">"flowchart LR\n  A --&gt; B"</span>, &#123; theme: <span class="t-str">"tufte"</span> &#125;);</code></pre>
+        <p>
+          The global also exposes the element class (<code>Flora.FloraDiagramElement</code>) and
+          <code>Flora.registerFloraDiagram(tagName?)</code> to register the component under a custom
+          tag name. Registration under <code>flora-diagram</code> happens automatically when the
+          script loads.
+        </p>
       </section>
 
       <!-- Syntax -->
