@@ -240,14 +240,14 @@ import Layout from "../layouts/Layout.astro";
 
   const embedBtn = document.getElementById("embed-btn") as HTMLButtonElement;
   embedBtn.addEventListener("click", async () => {
-    const code = input.value.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
-    const snippet = `<div id="flora-diagram"></div>
-<script type="module">
-  import { render } from "https://esm.sh/@topspinj/flora";
-  render(\`${code}\`, document.getElementById("flora-diagram"), { theme: "${themeSelect.value}" });
-<\/script>`;
+    await syncHash();
+    const vb = diagram.querySelector("svg")?.getAttribute("viewBox")?.split(" ").map(Number);
+    const height = vb ? Math.min(800, Math.max(160, Math.ceil(vb[3]))) : 400;
+    const url = new URL("/embed/", location.origin);
+    url.hash = location.hash;
+    const snippet = `<iframe src="${url.href}" width="100%" height="${height}" style="border:none;" loading="lazy" title="Flora diagram"></iframe>`;
     await navigator.clipboard.writeText(snippet);
-    flashLabel(embedBtn, "Snippet copied!");
+    flashLabel(embedBtn, "Iframe copied!");
   });
 
   const copySvgBtn = document.getElementById("copy-svg-btn") as HTMLButtonElement;
