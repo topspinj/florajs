@@ -92,15 +92,37 @@ const base = import.meta.env.BASE_URL;
       <section id="playground">
         <h2>Playground</h2>
         <p>
-          The easiest way to experiment with Flora is the <strong>playground</strong> &mdash;
-          a browser-based editor with live rendering, theme switching, and lineage highlighting.
+          The easiest way to experiment with Flora is the hosted
+          <a href={`${base}playground/`}><strong>playground</strong></a> &mdash; a browser-based
+          editor with live preview, theme switching, lineage highlighting, starter examples, and
+          SVG / PNG export. No install required.
         </p>
-        <pre><code><span class="t-cmt"># Clone the repo and run locally</span>
-git clone https://github.com/topspinj/florajs.git
-<span class="t-kw">cd</span> florajs
-npm install &amp;&amp; npm run build
-npx serve .
-<span class="t-cmt"># Open http://localhost:3000/playground.html</span></code></pre>
+        <h3>Shareable URLs</h3>
+        <p>
+          The playground encodes your diagram source and theme in the URL fragment as you type, so
+          sharing a diagram is just copying the URL (the <strong>Share</strong> button does this for
+          you). The format is:
+        </p>
+        <pre><code>https://florajs.dev/playground/#flora:<span class="t-str">&lt;base64url(deflate(JSON&#123; code, theme &#125;))&gt;</span></code></pre>
+        <p>
+          The fragment is compressed with <code>deflate-raw</code> and never sent to the server, so
+          diagrams stay private to whoever holds the link.
+        </p>
+        <h3>Embedding</h3>
+        <p>
+          The <strong>Embed</strong> button copies a ready-to-paste HTML snippet that renders your
+          diagram on any page:
+        </p>
+        <pre><code>&lt;div id=<span class="t-str">"flora-diagram"</span>&gt;&lt;/div&gt;
+&lt;script type=<span class="t-str">"module"</span>&gt;
+  <span class="t-kw">import</span> &#123; render &#125; <span class="t-kw">from</span> <span class="t-str">"https://esm.sh/@topspinj/flora"</span>;
+  <span class="t-fn">render</span>(<span class="t-str">`flowchart TD ...`</span>, document.<span class="t-fn">getElementById</span>(<span class="t-str">"flora-diagram"</span>), &#123; theme: <span class="t-str">"default"</span> &#125;);
+&lt;/script&gt;</code></pre>
+        <p>
+          To run the playground locally instead, clone the repo, run
+          <code>npm install &amp;&amp; npm run build</code>, then <code>npx serve .</code> and open
+          <code>/playground.html</code>.
+        </p>
       </section>
 
       <!-- Markdown / Rehype -->
@@ -116,7 +138,7 @@ npx serve .
         <p>Write Flora syntax in a fenced code block with the <code>flora</code> or <code>flowchart</code> language tag:</p>
         <pre><code>```flora
 flowchart LR
-  A[Source] --&gt; B{Decision}
+  A[Source] --&gt; B&#123;Decision&#125;
   B --&gt;|Yes| C[Deploy]
   B --&gt;|No| D[Fix]
 ```</code></pre>
@@ -208,13 +230,13 @@ flowchart LR
 <span class="t-kw">function</span> <span class="t-fn">App</span>() &#123;
   <span class="t-kw">return</span> (
     &lt;<span class="t-fn">Flora</span>
-      source={<span class="t-str">`flowchart LR
+      source=&#123;<span class="t-str">`flowchart LR
         A[Start] --&gt; B&#123;Decision&#125;
         B --&gt;|Yes| C[Deploy]
-        B --&gt;|No| D[Fix]`</span>}
+        B --&gt;|No| D[Fix]`</span>&#125;
       theme=<span class="t-str">"default"</span>
-      interactive={<span class="t-kw">true</span>}
-      onNodeClick={(id) =&gt; console.<span class="t-fn">log</span>(<span class="t-str">"Clicked:"</span>, id)}
+      interactive=&#123;<span class="t-kw">true</span>&#125;
+      onNodeClick=&#123;(id) =&gt; console.<span class="t-fn">log</span>(<span class="t-str">"Clicked:"</span>, id)&#125;
     /&gt;
   );
 &#125;</code></pre>
@@ -299,10 +321,10 @@ flowchart LR
 
   <span class="t-kw">return</span> (
     &lt;div&gt;
-      &lt;<span class="t-fn">Flora</span> source={source} onWarnings={setWarnings} /&gt;
-      {warnings.<span class="t-fn">map</span>((w, i) =&gt; (
-        &lt;p key={i}&gt;Line {w.line}: {w.message}&lt;/p&gt;
-      ))}
+      &lt;<span class="t-fn">Flora</span> source=&#123;source&#125; onWarnings=&#123;setWarnings&#125; /&gt;
+      &#123;warnings.<span class="t-fn">map</span>((w, i) =&gt; (
+        &lt;p key=&#123;i&#125;&gt;Line &#123;w.line&#125;: &#123;w.message&#125;&lt;/p&gt;
+      ))&#125;
     &lt;/div&gt;
   );
 &#125;</code></pre>
