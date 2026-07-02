@@ -116,7 +116,7 @@ npx serve .
         <p>Write Flora syntax in a fenced code block with the <code>flora</code> or <code>flowchart</code> language tag:</p>
         <pre><code>```flora
 flowchart LR
-  A[Source] --&gt; B{Decision}
+  A[Source] --&gt; B&#123;Decision&#125;
   B --&gt;|Yes| C[Deploy]
   B --&gt;|No| D[Fix]
 ```</code></pre>
@@ -208,13 +208,13 @@ flowchart LR
 <span class="t-kw">function</span> <span class="t-fn">App</span>() &#123;
   <span class="t-kw">return</span> (
     &lt;<span class="t-fn">Flora</span>
-      source={<span class="t-str">`flowchart LR
+      source=&#123;<span class="t-str">`flowchart LR
         A[Start] --&gt; B&#123;Decision&#125;
         B --&gt;|Yes| C[Deploy]
-        B --&gt;|No| D[Fix]`</span>}
+        B --&gt;|No| D[Fix]`</span>&#125;
       theme=<span class="t-str">"default"</span>
-      interactive={<span class="t-kw">true</span>}
-      onNodeClick={(id) =&gt; console.<span class="t-fn">log</span>(<span class="t-str">"Clicked:"</span>, id)}
+      interactive=&#123;<span class="t-kw">true</span>&#125;
+      onNodeClick=&#123;(id) =&gt; console.<span class="t-fn">log</span>(<span class="t-str">"Clicked:"</span>, id)&#125;
     /&gt;
   );
 &#125;</code></pre>
@@ -299,10 +299,10 @@ flowchart LR
 
   <span class="t-kw">return</span> (
     &lt;div&gt;
-      &lt;<span class="t-fn">Flora</span> source={source} onWarnings={setWarnings} /&gt;
-      {warnings.<span class="t-fn">map</span>((w, i) =&gt; (
-        &lt;p key={i}&gt;Line {w.line}: {w.message}&lt;/p&gt;
-      ))}
+      &lt;<span class="t-fn">Flora</span> source=&#123;source&#125; onWarnings=&#123;setWarnings&#125; /&gt;
+      &#123;warnings.<span class="t-fn">map</span>((w, i) =&gt; (
+        &lt;p key=&#123;i&#125;&gt;Line &#123;w.line&#125;: &#123;w.message&#125;&lt;/p&gt;
+      ))&#125;
     &lt;/div&gt;
   );
 &#125;</code></pre>
