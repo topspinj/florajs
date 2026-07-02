@@ -121,6 +121,16 @@ render(input, element, {
 - **Flowcharts** — `flowchart LR`, `flowchart TD`, etc.
 - **ERD** — coming soon
 
+## Feedback & Contributing
+
+Flora is young and shaped by the people using it — feedback of any size is welcome, and it all goes through [GitHub issues](https://github.com/topspinj/florajs/issues):
+
+- [Report a bug](https://github.com/topspinj/florajs/issues/new?template=bug_report.yml) — a [playground](https://florajs.dev/playground/) share link is the perfect reproduction
+- [Request a feature](https://github.com/topspinj/florajs/issues/new?template=feature_request.yml) — new syntax, API additions, theme ideas
+- [General feedback](https://github.com/topspinj/florajs/issues/new?template=feedback.yml) — docs gaps, confusing behavior, or what you built with Flora
+
+Pull requests are welcome too — the [open issues](https://github.com/topspinj/florajs/issues) are a good place to start.
+
 ## License
 
 MIT

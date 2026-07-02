@@ -41,8 +41,11 @@ import Layout from "../layouts/Layout.astro";
       </div>
     </div>
     <div class="hint">
-      Live preview as you type. Click a node to highlight its lineage; press Escape to clear.
-      The URL updates as you edit — copy it (or hit Share) to send your diagram to anyone.
+      <span>
+        Live preview as you type. Click a node to highlight its lineage; press Escape to clear.
+        The URL updates as you edit — copy it (or hit Share) to send your diagram to anyone.
+      </span>
+      <a id="report-issue" href="https://github.com/topspinj/florajs/issues/new?template=bug_report.yml" target="_blank" rel="noopener">Report an issue</a>
     </div>
   </main>
 </Layout>
@@ -187,6 +190,16 @@ import Layout from "../layouts/Layout.astro";
   async function syncHash() {
     const hash = await encodeState(input.value, themeSelect.value);
     history.replaceState(null, "", hash);
+    updateReportLink();
+  }
+
+  // Pre-fill the bug report template with the current diagram's share link
+  const reportLink = document.getElementById("report-issue") as HTMLAnchorElement;
+  function updateReportLink() {
+    const url = new URL("https://github.com/topspinj/florajs/issues/new");
+    url.searchParams.set("template", "bug_report.yml");
+    url.searchParams.set("reproduction", location.href);
+    reportLink.href = url.toString();
   }
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -327,6 +340,7 @@ import Layout from "../layouts/Layout.astro";
       input.value = EXAMPLES.pipeline;
     }
     doRender();
+    updateReportLink();
   })();
 </script>
 
@@ -466,11 +480,21 @@ import Layout from "../layouts/Layout.astro";
   }
 
   .hint {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     font-size: 12px;
     color: var(--color-text-muted);
     padding: 8px 16px;
     border-top: 1px solid var(--color-border);
     background: var(--color-surface);
+  }
+
+  .hint a {
+    flex-shrink: 0;
+    color: var(--color-text-secondary);
+    font-weight: 500;
   }
 
   @media (max-width: 720px) {

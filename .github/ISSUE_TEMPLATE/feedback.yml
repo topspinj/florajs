@@ -1,0 +1,11 @@
+name: General feedback
+description: Anything else — docs gaps, confusing behavior, ideas, or what you built with Flora
+labels: ["feedback"]
+body:
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Your feedback
+      description: Nothing is too small — "this confused me" is exactly the kind of thing we want to hear.
+    validations:
+      required: true

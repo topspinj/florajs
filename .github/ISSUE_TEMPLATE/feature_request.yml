@@ -1,0 +1,22 @@
+name: Feature request
+description: Suggest new syntax, an API addition, or an improvement
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the use case or problem, not just the solution — it helps us find the right design.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: If you have an idea for syntax or API, sketch it here. Mermaid-compatible ideas are especially welcome.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds
+      description: Anything you've tried that gets close?
