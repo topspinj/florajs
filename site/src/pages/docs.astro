@@ -48,7 +48,7 @@ const base = import.meta.env.BASE_URL;
         </div>
         <div class="sidebar-section">
           <h3>Advanced</h3>
-          <a href="#fault-tolerance">Fault Tolerance</a>
+          <a href="#fault-tolerance">Error Handling</a>
           <a href="#interactivity">Interactivity</a>
           <a href="#lineage">Lineage Highlighting</a>
         </div>
@@ -207,9 +207,19 @@ flowchart LR
                 <td><code>["flora", "flowchart"]</code></td>
                 <td>Code block languages to match</td>
               </tr>
+              <tr>
+                <td><code>strict</code></td>
+                <td><code>boolean</code></td>
+                <td><code>true</code></td>
+                <td>Throw <code>FloraParseError</code> (failing the build) when a diagram has parse errors or an unsupported type. Set to <code>false</code> to render best-effort.</td>
+              </tr>
             </tbody>
           </table>
         </div>
+        <p>
+          Strict mode is on by default so a broken diagram fails your build instead of publishing
+          silently wrong output &mdash; see <a href="#fault-tolerance">Error Handling</a>.
+        </p>
         <p>
           The rendered diagrams are static SVGs. For interactivity (zoom, pan, lineage highlighting),
           use the <a href="#render"><code>render()</code></a> API on the client side.
@@ -519,11 +529,12 @@ container.<span class="t-fn">appendChild</span>(svg);</code></pre>
       </section>
 
       <section id="toast">
-        <h3><code>toAST(input)</code></h3>
+        <h3><code>toAST(input, options?)</code></h3>
         <p>Parse input and return the abstract syntax tree. No layout or rendering is performed.</p>
         <div class="sig">
           <pre><code><span class="t-fn">toAST</span>(
-  input: <span class="t-kw">string</span>
+  input: <span class="t-kw">string</span>,
+  options?: &#123; strict?: <span class="t-kw">boolean</span> &#125;
 ): &#123; ast: <span class="t-kw">DiagramAST</span>; warnings: <span class="t-kw">ParseWarning</span>[] &#125;</code></pre>
         </div>
         <pre><code><span class="t-kw">const</span> &#123; ast &#125; = <span class="t-fn">toAST</span>(<span class="t-str">`flowchart LR
@@ -538,11 +549,12 @@ console.<span class="t-fn">log</span>(ast.edges);
       </section>
 
       <section id="tolayout">
-        <h3><code>toLayout(input)</code></h3>
+        <h3><code>toLayout(input, options?)</code></h3>
         <p>Parse and compute node/edge positions. Returns the layout with x/y coordinates for every node and routed edge points.</p>
         <div class="sig">
           <pre><code><span class="t-fn">toLayout</span>(
-  input: <span class="t-kw">string</span>
+  input: <span class="t-kw">string</span>,
+  options?: &#123; strict?: <span class="t-kw">boolean</span> &#125;
 ): &#123; layout: <span class="t-kw">LayoutResult</span>; warnings: <span class="t-kw">ParseWarning</span>[] &#125;</code></pre>
         </div>
         <pre><code><span class="t-kw">const</span> &#123; layout &#125; = <span class="t-fn">toLayout</span>(<span class="t-str">`flowchart LR
@@ -578,6 +590,12 @@ console.<span class="t-fn">log</span>(ast.edges);
                 <td><code>boolean</code></td>
                 <td><code>true</code></td>
                 <td>Enable zoom, pan, hover, click, and lineage highlighting</td>
+              </tr>
+              <tr>
+                <td><code>strict</code></td>
+                <td><code>boolean</code></td>
+                <td><code>false</code></td>
+                <td>Throw <code>FloraParseError</code> on parse errors or unsupported types instead of rendering best-effort (see <a href="#fault-tolerance">Error Handling</a>)</td>
               </tr>
               <tr>
                 <td><code>onNodeClick</code></td>
@@ -706,7 +724,7 @@ console.<span class="t-fn">log</span>(ast.edges);
   FloraOptions, FloraTheme, ThemePreset,
   DiagramAST, FlowchartAST, FlowchartNode, FlowchartEdge,
   LayoutResult, LayoutNode, LayoutEdge,
-  ParseWarning, ParseResult,
+  ParseWarning, ParseWarningSeverity, ParseResult,
 &#125; <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora"</span>;</code></pre>
 
         <h3>Core Types</h3>
@@ -722,7 +740,9 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>FloraOptions</code></td><td>Options passed to <code>render()</code>, <code>toSVGElement()</code>, etc.</td></tr>
               <tr><td><code>RenderResult</code></td><td>Return type of <code>render()</code> &mdash; <code>&#123; warnings, unsupportedType? &#125;</code></td></tr>
               <tr><td><code>ParseResult</code></td><td>Return type of <code>toAST()</code> &mdash; <code>&#123; ast, warnings &#125;</code></td></tr>
-              <tr><td><code>ParseWarning</code></td><td>A structured warning: <code>&#123; line, col, message &#125;</code></td></tr>
+              <tr><td><code>ParseWarning</code></td><td>A structured diagnostic: <code>&#123; line, col, message, severity &#125;</code></td></tr>
+              <tr><td><code>ParseWarningSeverity</code></td><td><code>"error" | "info"</code> &mdash; see <a href="#fault-tolerance">Error Handling</a></td></tr>
+              <tr><td><code>FloraParseError</code></td><td>Error thrown in strict mode, carrying all diagnostics in <code>.warnings</code></td></tr>
               <tr><td><code>DiagramType</code></td><td><code>"flowchart" | "erd" | "unsupported"</code></td></tr>
               <tr><td><code>FlowchartDirection</code></td><td><code>"TB" | "TD" | "BT" | "LR" | "RL"</code></td></tr>
               <tr><td><code>NodeShape</code></td><td><code>"rect" | "rounded" | "diamond" | "circle" | "stadium" | "cylinder" | "queue"</code></td></tr>
@@ -920,34 +940,73 @@ console.<span class="t-fn">log</span>(ast.edges);
 
       <!-- Advanced -->
       <section id="fault-tolerance">
-        <h2>Fault Tolerance</h2>
+        <h2>Error Handling &amp; Diagnostics</h2>
         <p>
-          Flora never throws. When it encounters invalid syntax, it skips the broken line, renders everything else, and returns
-          structured warnings with line numbers and column positions.
+          Flora's contract is <strong>never blank, never silently wrong</strong>. A line the parser cannot
+          understand is skipped in full and reported as a diagnostic with its line number &mdash; it is never
+          reinterpreted as extra nodes. Everything valid still renders.
         </p>
         <pre><code><span class="t-kw">const</span> &#123; warnings &#125; = <span class="t-fn">render</span>(<span class="t-str">`flowchart LR
   A[Start] --&gt; B&#123;Decision&#125;
-  B --&gt;|Yes| C[Do thing
   B --&gt;
   D[End]`</span>, el);
 
-<span class="t-cmt">// Renders A, B, D &mdash; skips broken lines</span>
+<span class="t-cmt">// Renders A, B, D &mdash; skips the broken line</span>
 <span class="t-cmt">// warnings:</span>
 <span class="t-cmt">// [</span>
-<span class="t-cmt">//   &#123; line: 3, col: 18, message: "Unterminated [](missing closing ])" &#125;,</span>
-<span class="t-cmt">//   &#123; line: 4, col: 3,  message: "Dangling arrow with no target node" &#125;</span>
+<span class="t-cmt">//   &#123; line: 3, col: 3, message: "Dangling arrow with no target node — line skipped", severity: "error" &#125;</span>
 <span class="t-cmt">// ]</span></code></pre>
-        <p>This makes Flora ideal for AI-generated diagrams, where LLMs often produce slightly broken Mermaid syntax.</p>
-
-        <h3>What Flora recovers from</h3>
+        <p>
+          Every diagnostic has a <code>severity</code>:
+        </p>
         <ul>
-          <li>Unterminated brackets, parens, braces, quotes</li>
-          <li>Dangling arrows with no target</li>
-          <li>Arrows followed by unexpected tokens</li>
-          <li>Unterminated subgraphs (missing <code>end</code>)</li>
-          <li>Unknown diagram types (falls back to flowchart)</li>
-          <li>Unexpected characters (skipped with warning)</li>
+          <li><code>"error"</code> &mdash; the input could not be understood; the affected line was skipped and the rendered diagram may be missing it.</li>
+          <li><code>"info"</code> &mdash; the input was understood and deliberately ignored (see below).</li>
         </ul>
+        <p>
+          If <em>nothing</em> parses, <code>render()</code> shows an error card listing the first few
+          diagnostics instead of a blank SVG. This makes Flora ideal for AI-generated diagrams, where
+          LLMs often produce slightly broken Mermaid syntax &mdash; the mistake is always visible, never silent.
+        </p>
+
+        <h3>Ignored Mermaid directives</h3>
+        <p>
+          Mermaid's styling and behavior directives solve problems Flora handles natively, so they are
+          recognized and skipped with an <code>info</code> diagnostic rather than misparsed:
+          <code>classDef</code>, <code>class</code>, <code>style</code>, <code>linkStyle</code>
+          (use <a href="#theme-presets">themes</a> instead), <code>click</code> (use
+          <code>onNodeClick</code>), <code>%%&#123;init&#125;%%</code> directives, and
+          <code>direction</code> inside subgraphs. Pasting Mermaid that uses them renders the same graph,
+          styled by your Flora theme.
+        </p>
+
+        <h3>Unknown diagram types</h3>
+        <p>
+          Known Mermaid types Flora doesn't support yet (<code>sequenceDiagram</code>, <code>gantt</code>, &hellip;)
+          and unrecognized single-word headers render an &ldquo;unsupported diagram type&rdquo; notice instead of being
+          guessed at. A headerless fragment like <code>A --&gt; B</code> is treated as a flowchart with an
+          <code>info</code> diagnostic suggesting a <code>flowchart TD</code> header.
+        </p>
+
+        <h3>Strict mode</h3>
+        <p>
+          Pass <code>strict: true</code> to any API function to throw a <code>FloraParseError</code> on
+          error-severity diagnostics or unsupported types instead of rendering best-effort. Use it wherever
+          nobody is watching the output &mdash; static site builds, CI, server-side rendering.
+        </p>
+        <pre><code><span class="t-kw">import</span> &#123; toSVGString, FloraParseError &#125; <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora"</span>;
+
+<span class="t-kw">try</span> &#123;
+  <span class="t-kw">const</span> &#123; svg &#125; = <span class="t-fn">toSVGString</span>(source, &#123; strict: <span class="t-kw">true</span> &#125;);
+&#125; <span class="t-kw">catch</span> (e) &#123;
+  <span class="t-kw">if</span> (e <span class="t-kw">instanceof</span> FloraParseError) console.error(e.message, e.warnings);
+&#125;</code></pre>
+        <p>
+          The <a href="#markdown">rehype plugin</a> is strict by default: a broken diagram fails the build
+          rather than publishing a wrong one. Pass <code>strict: false</code> to render best-effort.
+          Interactive surfaces like the <a href={`${base}playground/`}>playground</a> stay lenient and show
+          diagnostics alongside the live render.
+        </p>
       </section>
 
       <section id="interactivity">
