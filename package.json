@@ -47,7 +47,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/topspinj/florajs"
+    "url": "git+https://github.com/topspinj/florajs.git"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
