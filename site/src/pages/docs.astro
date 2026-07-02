@@ -321,7 +321,7 @@ flowchart LR
         <h3>Usage</h3>
         <pre><code>&lt;<span class="t-fn">script</span> src=<span class="t-str">"https://unpkg.com/@topspinj/flora"</span>&gt;&lt;/<span class="t-fn">script</span>&gt;
 
-&lt;<span class="t-fn">flora-diagram</span> theme=<span class="t-str">"default"</span> interactive&gt;
+&lt;<span class="t-fn">flora-diagram</span> theme=<span class="t-str">"default"</span>&gt;
 flowchart TD
   A[Dashboard] --&gt; B[API]
   B --&gt; C[(Database)]
@@ -350,8 +350,8 @@ flowchart TD
               </tr>
               <tr>
                 <td><code>interactive</code></td>
-                <td>boolean attribute</td>
-                <td>Enable zoom, pan, hover, click, and lineage highlighting. Present = on; <code>interactive="false"</code> = off.</td>
+                <td><code>"true" | "false"</code></td>
+                <td>Zoom, pan, hover, click, and lineage highlighting. On by default, matching <code>render()</code> and the React component; set <code>interactive="false"</code> to disable.</td>
               </tr>
             </tbody>
           </table>

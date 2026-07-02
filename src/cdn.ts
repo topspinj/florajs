@@ -11,7 +11,7 @@ import type { FloraOptions, ThemePreset } from "./types.js";
  *
  * Attributes:
  * - `theme` — theme preset name ("default", "tufte", "digital", "sketch")
- * - `interactive` — enable zoom/pan/hover/click (presence = true, `interactive="false"` = false)
+ * - `interactive` — zoom/pan/hover/click, on by default like the core API; set `interactive="false"` to disable
  */
 export class FloraDiagramElement extends HTMLElement {
   static observedAttributes = ["theme", "interactive"];
@@ -54,7 +54,7 @@ export class FloraDiagramElement extends HTMLElement {
     const themeAttr = this.getAttribute("theme");
     const options: FloraOptions = {
       theme: themeAttr && themeAttr in themes ? (themeAttr as ThemePreset) : undefined,
-      interactive: this.hasAttribute("interactive") && this.getAttribute("interactive") !== "false",
+      interactive: this.getAttribute("interactive") !== "false",
     };
 
     render(source, this.#container, options);

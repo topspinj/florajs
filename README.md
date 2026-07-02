@@ -15,14 +15,14 @@ Or drop it into any HTML page with no build step — the CDN bundle exposes `win
 ```html
 <script src="https://unpkg.com/@topspinj/flora"></script>
 
-<flora-diagram theme="default" interactive>
+<flora-diagram theme="default">
 flowchart TD
   A[Dashboard] --> B[API]
   B --> C[(Database)]
 </flora-diagram>
 ```
 
-The element re-renders when its text content or `theme`/`interactive` attributes change.
+Diagrams are interactive (zoom, pan, click-to-highlight) by default — set `interactive="false"` to disable. The element re-renders when its text content or `theme`/`interactive` attributes change.
 
 ## Usage
 

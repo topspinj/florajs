@@ -65,6 +65,21 @@ describe("<flora-diagram> web component", () => {
     expect(el.shadowRoot!.querySelector("svg")).not.toBeNull();
   });
 
+  it("is interactive by default (nodes get pointer cursor)", () => {
+    const el = createDiagram();
+    const node = el.shadowRoot!.querySelector<SVGGElement>(".flora-node");
+    expect(node!.style.cursor).toBe("pointer");
+  });
+
+  it('disables interactivity with interactive="false"', () => {
+    const el = document.createElement("flora-diagram") as FloraDiagramElement;
+    el.setAttribute("interactive", "false");
+    el.textContent = SIMPLE_SOURCE;
+    document.body.appendChild(el);
+    const node = el.shadowRoot!.querySelector<SVGGElement>(".flora-node");
+    expect(node!.style.cursor).not.toBe("pointer");
+  });
+
   it("clears the diagram when the source becomes empty", async () => {
     const el = createDiagram();
     el.textContent = "";
