@@ -12,6 +12,7 @@ const base = import.meta.env.BASE_URL;
           <a href="#installation">Installation</a>
           <a href="#quick-start">Quick Start</a>
           <a href="#playground">Playground</a>
+          <a href="#embedding">Embedding</a>
         </div>
         <div class="sidebar-section">
           <h3>Syntax</h3>
@@ -112,10 +113,50 @@ const base = import.meta.env.BASE_URL;
           The fragment is compressed with <code>deflate-raw</code> and never sent to the server, so
           diagrams stay private to whoever holds the link.
         </p>
-        <h3>Embedding</h3>
+        <h3 id="embedding">Embedding</h3>
         <p>
-          The <strong>Embed</strong> button copies a ready-to-paste HTML snippet that renders your
-          diagram on any page:
+          The hosted <code>/embed</code> route renders a diagram as a clean, chrome-free page,
+          made for <code>&lt;iframe&gt;</code> embeds on platforms that allow HTML but not custom
+          scripts &mdash; Ghost, Substack, Notion, and similar. The playground's
+          <strong>Embed</strong> button copies a ready-to-paste iframe snippet for the current
+          diagram:
+        </p>
+        <pre><code>&lt;iframe
+  src=<span class="t-str">"https://florajs.dev/embed#flora:&lt;encoded&gt;"</span>
+  width=<span class="t-str">"100%"</span> height=<span class="t-str">"300"</span>
+  style=<span class="t-str">"border:none;"</span> loading=<span class="t-str">"lazy"</span>
+  title=<span class="t-str">"Flora diagram"</span>&gt;
+&lt;/iframe&gt;</code></pre>
+        <p>
+          The diagram source lives in the URL fragment, so it never hits the server. Two formats
+          are accepted: the playground's compressed <code>#flora:&hellip;</code> format (above),
+          or plain URI-encoded Mermaid source for hand-written embeds:
+        </p>
+        <pre><code>https://florajs.dev/embed<span class="t-str">#flowchart%20TD%0A%20%20A%20--%3E%20B</span></code></pre>
+        <p>Query parameters:</p>
+        <ul>
+          <li>
+            <code>theme</code> &mdash; <code>default</code>, <code>tufte</code>,
+            <code>digital</code>, or <code>sketch</code>. Overrides the theme encoded in a
+            <code>#flora:</code> fragment.
+          </li>
+          <li>
+            <code>interactive=1</code> &mdash; enables zoom, pan, and lineage highlighting. Off by
+            default so the embed never captures the host page's scroll.
+          </li>
+        </ul>
+        <p>
+          For auto-sizing, the page posts <code>&#123; type: "flora:height", height &#125;</code>
+          to the parent window whenever the rendered size changes. On pages where you control
+          scripts, listen and resize the iframe:
+        </p>
+        <pre><code>window.<span class="t-fn">addEventListener</span>(<span class="t-str">"message"</span>, (e) =&gt; &#123;
+  <span class="t-kw">if</span> (e.data?.type === <span class="t-str">"flora:height"</span>)
+    document.<span class="t-fn">querySelector</span>(<span class="t-str">"iframe.flora"</span>).height = e.data.height;
+&#125;);</code></pre>
+        <p>
+          On pages where scripts <em>are</em> allowed, you can skip the iframe and render inline
+          with the CDN bundle instead:
         </p>
         <pre><code>&lt;div id=<span class="t-str">"flora-diagram"</span>&gt;&lt;/div&gt;
 &lt;script type=<span class="t-str">"module"</span>&gt;
