@@ -1,6 +1,8 @@
 ---
 import Layout from "../layouts/Layout.astro";
 
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 const heroDefault = `flowchart LR
   A[Prompt] --> B{Agent}
   B -->|analyze| C(Think)
@@ -21,7 +23,7 @@ const heroDefault = `flowchart LR
         </p>
         <div class="hero-actions">
           <a href="#get-started" class="btn btn-primary">Get Started</a>
-          <a href="https://github.com/topspinj/florajs" class="btn btn-ghost">GitHub</a>
+          <a href={`${base}/playground/`} class="btn btn-ghost">Playground</a>
         </div>
       </div>
 
@@ -134,7 +136,19 @@ const heroDefault = `flowchart LR
     <div class="container">
       <h2>Get Started</h2>
       <div class="install-row">
-        <pre class="install-cmd"><code>npm install @topspinj/flora</code></pre>
+        <div class="install-wrap">
+          <pre class="install-cmd"><code>npm install @topspinj/flora</code></pre>
+          <button
+            class="copy-btn"
+            id="copy-install"
+            type="button"
+            aria-label="Copy install command"
+            data-command="npm install @topspinj/flora"
+          >
+            <svg class="icon-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <svg class="icon-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
       </div>
       <pre class="usage-code"><code><span class="t-kw">import</span> &#123; render &#125; <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora"</span>;
 
@@ -168,25 +182,14 @@ const heroDefault = `flowchart LR
     </div>
   </section>
 
-  <!-- Roadmap -->
+  <!-- What's next -->
   <section class="roadmap">
     <div class="container">
-      <h2>Roadmap</h2>
+      <h2>What&rsquo;s next</h2>
+      <p class="section-sub">
+        Flowcharts are fully supported today. Here&rsquo;s where Flora is headed.
+      </p>
       <div class="roadmap-list">
-        <div class="roadmap-item">
-          <span class="rm-badge rm-shipped">Shipped</span>
-          <div>
-            <h3>Flowcharts</h3>
-            <p>Full Mermaid-compatible flowchart syntax with 5 node shapes, 3 edge styles, and chain edges.</p>
-          </div>
-        </div>
-        <div class="roadmap-item">
-          <span class="rm-badge rm-shipped">Shipped</span>
-          <div>
-            <h3>Fault-Tolerant Parsing</h3>
-            <p>Recovers from broken syntax. Returns structured warnings with line numbers.</p>
-          </div>
-        </div>
         <div class="roadmap-item">
           <span class="rm-badge rm-next">Next</span>
           <div>
@@ -208,6 +211,21 @@ const heroDefault = `flowchart LR
             <p>Entity-relationship diagrams, sequence diagrams, and beyond.</p>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing CTA -->
+  <section class="cta">
+    <div class="container">
+      <h2>Start diagramming</h2>
+      <p class="section-sub">
+        Install Flora and render your first diagram in under a minute &mdash; or
+        try it in the playground first.
+      </p>
+      <div class="cta-actions">
+        <a href={`${base}/playground/`} class="btn btn-primary">Open the Playground</a>
+        <a href="https://github.com/topspinj/florajs" class="btn btn-ghost">View on GitHub</a>
       </div>
     </div>
   </section>
@@ -234,7 +252,7 @@ const heroDefault = `flowchart LR
 
   // Lineage demo
   const lineageDiagram = document.getElementById("lineage-diagram")!;
-  render(`flowchart TD
+  render(`flowchart LR
   src[(Source DB)] --> raw[(Raw Events)]
   raw --> stg_orders[Staging Orders]
   raw --> stg_customers[Staging Customers]
@@ -247,6 +265,16 @@ const heroDefault = `flowchart LR
   fct_orders --> mart_ops[Ops Mart]
   mart_revenue --> dashboard([Dashboard])
   mart_ops --> alerts{Alerts}`, lineageDiagram, { interactive: true });
+
+  // Copy install command
+  const copyBtn = document.getElementById("copy-install") as HTMLButtonElement;
+  let copyTimeout: ReturnType<typeof setTimeout>;
+  copyBtn.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(copyBtn.dataset.command!);
+    copyBtn.classList.add("copied");
+    clearTimeout(copyTimeout);
+    copyTimeout = setTimeout(() => copyBtn.classList.remove("copied"), 1600);
+  });
 </script>
 
 <style>
@@ -443,6 +471,7 @@ const heroDefault = `flowchart LR
   .features h2,
   .get-started h2,
   .roadmap h2,
+  .cta h2,
   .lineage-demo h2 {
     font-family: var(--font-serif);
     font-size: 36px;
@@ -605,7 +634,7 @@ const heroDefault = `flowchart LR
   }
 
   .lineage-frame {
-    min-height: 420px;
+    min-height: 240px;
     padding: 24px;
   }
 
@@ -656,10 +685,51 @@ const heroDefault = `flowchart LR
     margin-bottom: 32px;
   }
 
+  .install-wrap {
+    position: relative;
+    display: inline-block;
+  }
+
   .install-cmd {
     display: inline-block;
     font-size: 15px;
-    padding: 14px 36px;
+    padding: 14px 60px 14px 36px;
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .copy-btn:hover {
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .copy-btn .icon-check {
+    display: none;
+  }
+
+  .copy-btn.copied .icon-copy {
+    display: none;
+  }
+
+  .copy-btn.copied .icon-check {
+    display: block;
+    color: #4ade80;
   }
 
   .usage-code {
@@ -761,6 +831,40 @@ const heroDefault = `flowchart LR
     font-size: 14px;
     color: var(--color-text-secondary);
     line-height: 1.55;
+  }
+
+  /* ── Closing CTA ── */
+
+  .cta {
+    position: relative;
+    padding: 96px 24px 112px;
+    background: var(--color-surface);
+  }
+
+  .cta::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(107, 63, 160, 0.1) 25%,
+      rgba(13, 50, 178, 0.12) 50%,
+      rgba(26, 127, 90, 0.1) 75%,
+      transparent
+    );
+  }
+
+  .cta .section-sub {
+    margin-bottom: 32px;
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
   }
 
   /* ── Responsive ── */

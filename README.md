@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://florajs.dev/logo.png" alt="Flora logo" width="140" />
+</p>
+
 # Flora
 
 Beautiful, interactive diagrams from Mermaid-compatible syntax.

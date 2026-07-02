@@ -858,6 +858,7 @@ export function renderSVG(
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  svg.setAttribute("class", "flora-svg");
   svg.setAttribute("width", "100%");
   svg.setAttribute("height", "100%");
   svg.setAttribute("viewBox", `0 0 ${layout.width + padding * 2} ${layout.height + padding * 2}`);
@@ -867,6 +868,9 @@ export function renderSVG(
 
   const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
   style.textContent = `
+    .flora-svg:focus:not(:focus-visible) {
+      outline: none;
+    }
     .flora-node, .flora-edge, .flora-subgraph {
       transition: opacity 0.2s ease;
     }

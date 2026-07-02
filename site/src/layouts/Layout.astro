@@ -7,6 +7,8 @@ interface Props {
 
 const { title, description = "The fault-tolerant diagram library for AI applications. Mermaid-compatible syntax, beautiful interactive SVGs.", fullscreen = false } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(`${base}/logo.png`, Astro.site);
 ---
 
 <!doctype html>
@@ -16,6 +18,16 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <link rel="canonical" href={canonicalURL} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -28,7 +40,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
           Flora
         </a>
         <div class="nav-links">
-          <a href="#features">Features</a>
+          <a href={`${base}/#features`}>Features</a>
           <a href={`${base}/docs`}>Docs</a>
           <a href={`${base}/playground/`}>Playground</a>
           <a href="https://github.com/topspinj/florajs" class="nav-gh">
