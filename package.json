@@ -16,6 +16,11 @@
       "types": "./dist/rehype.d.ts",
       "import": "./dist/rehype.js",
       "require": "./dist/rehype.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "require": "./dist/react.cjs"
     }
   },
   "files": [
@@ -27,6 +32,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run test:run",
     "playground": "tsup && open http://localhost:3333/playground.html && python3 -m http.server 3333"
   },
   "keywords": [
@@ -44,6 +50,12 @@
     "url": "https://github.com/topspinj/florajs"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.17",
+    "jsdom": "^29.1.1",
+    "react": "^19.2.7",
+    "@rollup/rollup-darwin-arm64": "^4.62.1",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
     "vitest": "^2.0.0"
@@ -51,7 +63,12 @@
   "dependencies": {
     "@dagrejs/dagre": "^1.1.0"
   },
-  "optionalDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.62.1"
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   }
 }

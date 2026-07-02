@@ -41,6 +41,14 @@ feat/subgraph-rendering
 fix/edge-label-overlap
 ```
 
+### Documentation
+
+Every new feature, API change, or new type/interface **must** be documented in the public-facing docs at `site/src/pages/docs.astro`. This includes:
+- New API functions → add to the API Reference section
+- New component props or integrations → add to the Integrations section
+- New or changed TypeScript types → add to the Types section
+- New theme presets or options → add to the Theming section
+
 ## Project structure
 
 - `src/parser/` — Tokenizer and flowchart parser (Mermaid-compatible syntax)
