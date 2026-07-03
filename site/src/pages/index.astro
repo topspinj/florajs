@@ -422,6 +422,7 @@ const heroDefault = `flowchart LR
     background: var(--color-code-bg);
     display: flex;
     flex-direction: column;
+    min-width: 0;
   }
 
   .showcase-code textarea {
@@ -450,6 +451,7 @@ const heroDefault = `flowchart LR
   .showcase-diagram {
     background: white;
     border-left: 1px solid rgba(0, 0, 0, 0.06);
+    min-width: 0;
   }
 
   .diagram-frame {
@@ -518,6 +520,10 @@ const heroDefault = `flowchart LR
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
+  }
+
+  .comp-panel {
+    min-width: 0;
   }
 
   .comp-panel pre {
