@@ -53,6 +53,7 @@ Nodes are defined inline with their shape syntax. If a node appears multiple tim
 | Rounded | `A(Label)` | Intermediate processes |
 | Diamond | `A{Label}` | Decisions, conditions |
 | Stadium | `A([Label])` | Terminals, start/end |
+| Circle | `A((Label))` | Events, connectors |
 | Cylinder | `A[(Label)]` | Databases, storage |
 | Queue | `A[[Label]]` | Message queues, buffers |
 
@@ -62,14 +63,27 @@ Nodes are defined inline with their shape syntax. If a node appears multiple tim
 A --> B          solid arrow
 A ==> B          thick arrow
 A -.-> B         dotted arrow
-A -->|label| B   solid arrow with label
-A ==>|label| B   thick arrow with label
-A -.->|label| B  dotted arrow with label
+A --- B          open link (no arrowhead — non-directional relationships)
+A <--> B         bidirectional arrow (two-way communication)
+A -->|label| B   arrow with label
 ```
+
+Dotted and thick edges follow the same pattern: `-.-` / `===` for open, `<-.->` / `<==>` for bidirectional. Chain multiple nodes in one line: `A --> B --> C --> D`.
 
 ### Edge Labels
 
-Labels go between pipes immediately after the arrow: `-->|Yes|`. The label text cannot contain `|` characters.
+Labels go between pipes immediately after the arrow: `-->|Yes|`. The label text cannot contain `|` characters. Inline labels between dashes also work: `A -- label --> B`.
+
+### Node Links
+
+Attach a clickable URL to a node with the `click` directive — useful for linking dbt models to their docs, or services to their dashboards:
+
+```
+click A "https://docs.example.com" "hover tooltip"
+click B "https://api.example.com" _blank
+```
+
+The tooltip and target (`_blank` etc.) are optional. Click lines may appear before or after the node they reference.
 
 ### Subgraphs
 
@@ -100,6 +114,16 @@ A --> B  %% Inline comments work too
 - IDs are case-sensitive
 - Keep IDs short and descriptive — they're used internally, labels are what users see
 
+### Mermaid features to avoid
+
+Flora is a Mermaid-compatible **subset**, not full Mermaid. Do not emit:
+
+- Styling directives: `classDef`, `class`, `style`, `linkStyle`, `%%{init}%%` — Flora recognizes and deliberately ignores these (styling goes through themes)
+- Mermaid's `click A myCallback` callback form — deliberately ignored; use the URL form (`click A "url"`) or the `onNodeClick` option instead
+- Other diagram types: `sequenceDiagram`, `classDiagram`, `erDiagram`, `gantt`, etc. Only `flowchart`/`graph` is supported.
+
+Lines Flora can't parse are skipped whole and reported as diagnostics — valid lines still render. Stick to the syntax documented above and the output will be clean.
+
 ## Design Guidelines
 
 When generating diagrams, follow these principles:
@@ -118,6 +142,18 @@ When generating diagrams, follow these principles:
 
 ## Rendering
 
+### Playground share link
+
+Always offer a live link alongside the syntax — it works even if the user has nothing installed. Write the diagram to a temp file with a file-writing tool, then pass the path to the bundled script (theme is optional):
+
+```bash
+node scripts/share-link.mjs /tmp/diagram.flora tufte
+```
+
+Run it from this skill's directory. Don't pipe the syntax in via `echo` — arrows like `-->|label|` are full of shell redirection characters, and a quoting slip corrupts the encoded diagram silently while the displayed one stays correct. The script prints the diagram it encoded to stderr; check it matches what you showed the user. The URL (`https://florajs.dev/playground/#flora:...`) opens the diagram in the interactive playground, where the user can view, edit, and re-share it.
+
+### JavaScript
+
 If the user's project has `@topspinj/flora` installed, output runnable code:
 
 ```javascript
@@ -133,9 +169,11 @@ render(`flowchart LR
 
 ```javascript
 render(syntax, element, {
-  theme: "default",        // "default" | "tufte" | "digital"
+  theme: "default",        // "default" | "tufte" | "digital" | "sketch"
   interactive: true,       // zoom, pan, hover, click
+  strict: false,           // true = throw FloraParseError instead of best-effort render
   onNodeClick: (id) => {}, // callback when node is clicked
+  onNodeHover: (id) => {}, // callback when node is hovered
   onHighlight: (id, upstream, downstream) => {}, // lineage callback
 });
 ```
@@ -145,6 +183,25 @@ render(syntax, element, {
 - **default** — Clean, colorful, with gradients and shadows. Good for presentations.
 - **tufte** — Minimal, muted. Good for documentation and technical writing.
 - **digital** — Dark-friendly, high contrast. Good for dashboards and developer tools.
+- **sketch** — Hand-drawn look. Good for informal docs and brainstorming.
+
+### Python / Jupyter
+
+If the user works in Python (the `florajs` package on PyPI), diagrams display interactively in notebooks and export to SVG headlessly:
+
+```python
+from florajs import Diagram
+
+d = Diagram("""
+flowchart TD
+  a[Start] --> b{Decide}
+  b -->|yes| c([Done])
+""", theme="sketch")
+d                          # displays interactively in Jupyter
+d.to_svg_file("out.svg")   # headless SVG export (no browser needed)
+```
+
+There is also a programmatic builder (`from florajs import Flowchart`) with `.node(id, label, shape=...)` and `.edge(src, dst, label)` methods.
 
 ## dbt Manifest Support
 
@@ -152,6 +209,6 @@ When the user provides a dbt `manifest.json` or asks to visualize dbt lineage, r
 
 ## Output Format
 
-Always output the Flora syntax in a fenced code block. If the user just wants the diagram definition (most common), use a plain code block. If they want integration code, use a `javascript` code block with the `render()` call.
+Always output the Flora syntax in a fenced code block, followed by a playground share link so the user can see the rendered diagram immediately. If the user just wants the diagram definition (most common), use a plain code block. If they want integration code, use a `javascript` code block with the `render()` call.
 
 When modifying an existing diagram, show the complete updated syntax — not a diff or partial snippet.

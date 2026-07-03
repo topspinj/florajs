@@ -9,3 +9,8 @@ python/dist/
 python/.venv/
 __pycache__/
 *.egg-info/
+site/.astro/
+
+# Claude Code artifacts (skill eval workspace, worktrees)
+flora-workspace/
+.claude/worktrees/

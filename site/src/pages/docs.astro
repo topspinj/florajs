@@ -30,6 +30,7 @@ const base = import.meta.env.BASE_URL;
           <a href="#react">React</a>
           <a href="#cdn">CDN / Web Component</a>
           <a href="#python">Python</a>
+          <a href="#claude-code">Claude Code</a>
         </div>
         <div class="sidebar-section">
           <h3>API Reference</h3>
@@ -552,6 +553,40 @@ flowchart TD
           skipped lines surface as a Python <code>FloraSyntaxWarning</code>, and <code>strict=True</code>
           raises <code>FloraParseError</code> instead. Theme presets and override dicts mirror
           <a href="#theme-presets">the JS themes</a>.
+        </p>
+      </section>
+
+      <section id="claude-code">
+        <h2>Claude Code</h2>
+        <p>
+          Flora ships an official <a href="https://claude.com/claude-code">Claude Code</a> plugin —
+          a skill that teaches Claude to write correct Flora syntax, choose sensible shapes and
+          layouts, and visualize dbt lineage straight from a <code>manifest.json</code>. Every
+          diagram comes back with a <a href="#playground">playground share link</a>, so you see the
+          rendered result immediately without installing anything.
+        </p>
+
+        <h3>Install</h3>
+        <pre><code>/plugin marketplace add topspinj/florajs
+/plugin install flora@florajs</code></pre>
+
+        <h3>Usage</h3>
+        <p>
+          Just describe what you want — no special commands needed. The skill triggers on requests
+          like:
+        </p>
+        <ul>
+          <li>"Diagram this architecture"</li>
+          <li>"Map out the auth flow in this codebase"</li>
+          <li>"Visualize the lineage in my dbt project"</li>
+          <li>"Show me everything downstream of stg_orders"</li>
+        </ul>
+        <p>
+          Claude replies with Flora syntax, a live playground link, and — if your project uses
+          <code>@topspinj/flora</code> or the <code>florajs</code> Python package — runnable
+          integration code. The skill follows the open
+          <a href="https://code.claude.com/docs/en/skills">Agent Skills</a> format, so it also works
+          with other agents that support it.
         </p>
       </section>
 
