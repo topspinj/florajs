@@ -572,29 +572,29 @@ flowchart TD
 
         <h3>Usage</h3>
         <p>
-          Just describe what you want — no special commands needed. For example:
+          Just describe what you want — or invoke the skill directly with <code>/flora</code>:
         </p>
-        <blockquote>
-          <em>draw the auth flow for my app — user logs in, we check credentials, if valid issue a JWT, if not show error, then redirect to dashboard</em>
-        </blockquote>
+        <div class="prompt-block">
+          <span class="prompt-text">/flora draw the auth flow for my app — user logs in, we check credentials, if valid issue a JWT, if not show error, then redirect to dashboard</span>
+          <button class="prompt-copy" aria-label="Copy prompt">Copy</button>
+        </div>
         <p>Claude replies with the diagram and a live link you can open immediately:</p>
         <pre><code>flowchart TD
-  login([User logs in]) --&gt; check{Credentials valid?}
-  check --&gt;|valid| jwt[Issue JWT]
-  check --&gt;|invalid| err[Show error]
+  login([User logs in]) --&gt; check&#123;Credentials valid?&#125;
+  check --&gt;&#124;valid&#124; jwt[Issue JWT]
+  check --&gt;&#124;invalid&#124; err[Show error]
   jwt --&gt; dash([Redirect to dashboard])</code></pre>
         <p>
           <a href="https://florajs.dev/playground/#flora:VY6xDsIwEEN_5ZSJSvQHGGCABUYoYggdQnIlgZBIlysd2v47JGJhs-xn2aPQ0aBYic7HQVtFDM3uGgB8vLuwkOeElHUCF9oK6noN2qJ-jltCg4Gd8gneyjuzmXOthBmbijnBY2C5T6lHOFya9h9x4QchkTzZOGQRqVDfXlkzKtmFPKJxhJqBY3FuUZFpK7EUbPGV_xvsVO9ZzB8">Open this diagram in the playground →</a>
         </p>
         <p>
-          The skill also triggers on "map out the auth flow in this codebase", "visualize the lineage
-          in my dbt project", "show me everything downstream of stg_orders", and anything else that
-          reads like a diagram request — even without an explicit "diagram" keyword.
-          Claude replies with Flora syntax, a live playground link, and — if your project uses
-          <code>@topspinj/flora</code> or the <code>florajs</code> Python package — runnable
-          integration code. The skill follows the open
-          <a href="https://code.claude.com/docs/en/skills">Agent Skills</a> format, so it also works
-          with other agents that support it.
+          The skill triggers on anything that reads like a diagram request — "map out the auth flow
+          in this codebase", "visualize the lineage in my dbt project", "show me everything downstream
+          of stg_orders" — even without an explicit "diagram" keyword. Claude replies with Flora
+          syntax, a live playground link, and — if your project uses <code>@topspinj/flora</code> or
+          the <code>florajs</code> Python package — runnable integration code. The skill follows the
+          open <a href="https://code.claude.com/docs/en/skills">Agent Skills</a> format, so it also
+          works with other agents that support it.
         </p>
       </section>
 
@@ -1398,7 +1398,57 @@ console.<span class="t-fn">log</span>(ast.edges);
   </div>
 </Layout>
 
+<script>
+  document.querySelectorAll<HTMLButtonElement>(".prompt-copy").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const text = btn.previousElementSibling?.textContent?.trim() ?? "";
+      await navigator.clipboard.writeText(text);
+      const original = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  });
+</script>
+
 <style>
+  .prompt-block {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--color-accent-light);
+    border: 1px solid #c7d2fb;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 12px 0;
+  }
+
+  .prompt-text {
+    font-size: 14px;
+    color: var(--color-accent);
+    line-height: 1.5;
+  }
+
+  .prompt-copy {
+    flex-shrink: 0;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid #c7d2fb;
+    background: white;
+    color: var(--color-accent);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .prompt-copy:hover {
+    background: var(--color-accent);
+    color: white;
+    border-color: var(--color-accent);
+  }
+
   .docs-layout {
     display: flex;
     max-width: 1200px;

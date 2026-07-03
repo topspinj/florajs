@@ -157,9 +157,11 @@ Flora ships an official [Claude Code](https://claude.com/claude-code) plugin: a 
 /plugin install flora@florajs
 ```
 
-Then just describe what you want:
+Then invoke the skill directly with `/flora`:
 
-> *draw the auth flow for my app — user logs in, we check credentials, if valid issue a JWT, if not show error, then redirect to dashboard*
+```
+/flora draw the auth flow for my app — user logs in, we check credentials, if valid issue a JWT, if not show error, then redirect to dashboard
+```
 
 Claude produces the diagram and a live link:
 
