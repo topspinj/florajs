@@ -1,7 +1,7 @@
 {
   "name": "flora",
   "description": "Generate Flora diagram syntax and render interactive flowcharts — architectures, pipelines, dbt lineage — from natural language.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Jill Cates",
     "url": "https://github.com/topspinj"
