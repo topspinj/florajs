@@ -47,6 +47,37 @@ describe("renderSVGString", () => {
     expect(svg).toContain("Cylinder");
   });
 
+  it("omits the arrowhead marker on open links", () => {
+    const svg = renderFromSource("flowchart LR\n  A --- B");
+    expect(svg).not.toContain("marker-end");
+  });
+
+  it("keeps the arrowhead marker on directed edges", () => {
+    const svg = renderFromSource("flowchart LR\n  A --> B");
+    expect(svg).toContain("marker-end");
+  });
+
+  it("adds arrowheads at both ends of bidirectional edges", () => {
+    const svg = renderFromSource("flowchart LR\n  A <--> B");
+    expect(svg).toContain("marker-end");
+    expect(svg).toContain("marker-start");
+  });
+
+  it("wraps linked nodes in an anchor", () => {
+    const svg = renderFromSource(`flowchart LR
+  A[Docs] --> B
+  click A "https://docs.example.com" "Open docs" _blank`);
+    expect(svg).toContain('<a href="https://docs.example.com" target="_blank" rel="noopener noreferrer">');
+    expect(svg).toContain("<title>Open docs</title>");
+  });
+
+  it("escapes URLs in node links", () => {
+    const svg = renderFromSource(`flowchart LR
+  A --> B
+  click A "https://example.com?a=1&b=2"`);
+    expect(svg).toContain("&amp;b=2");
+  });
+
   it("applies digital (dark) theme", () => {
     const svg = renderFromSource("flowchart TD\n  A --> B", "digital");
     expect(svg).toContain("#0F172A"); // digital theme background

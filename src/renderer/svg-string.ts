@@ -191,18 +191,20 @@ function renderDefs(theme: FloraTheme, nodes: LayoutNode[], id: string): string 
     defs += `</filter>`;
   }
 
-  defs += `<marker ${attrs({
-    id: `flora-arrowhead-${id}`,
-    markerWidth: "12", markerHeight: "8",
-    refX: "11", refY: "4",
-    orient: "auto", markerUnits: "userSpaceOnUse",
-  })}>`;
-  defs += `<path ${attrs({
-    d: "M 1 1 L 10 4 L 1 7",
-    fill: "none", stroke: theme.edgeColors.stroke,
-    "stroke-width": "1.5", "stroke-linecap": "round", "stroke-linejoin": "round",
-  })}/>`;
-  defs += `</marker>`;
+  for (const [suffix, orient] of [["", "auto"], ["-start", "auto-start-reverse"]] as const) {
+    defs += `<marker ${attrs({
+      id: `flora-arrowhead${suffix}-${id}`,
+      markerWidth: "12", markerHeight: "8",
+      refX: "11", refY: "4",
+      orient, markerUnits: "userSpaceOnUse",
+    })}>`;
+    defs += `<path ${attrs({
+      d: "M 1 1 L 10 4 L 1 7",
+      fill: "none", stroke: theme.edgeColors.stroke,
+      "stroke-width": "1.5", "stroke-linecap": "round", "stroke-linejoin": "round",
+    })}/>`;
+    defs += `</marker>`;
+  }
 
   defs += "</defs>";
   return defs;
@@ -480,7 +482,8 @@ function renderEdgeStr(edge: LayoutEdge, theme: FloraTheme, id: string): string 
     fill: "none", stroke: theme.edgeColors.stroke,
     "stroke-width": strokeWidth,
     "stroke-linecap": "round", "stroke-linejoin": "round",
-    "marker-end": `url(#flora-arrowhead-${id})`,
+    ...(edge.arrowType !== "open" ? { "marker-end": `url(#flora-arrowhead-${id})` } : {}),
+    ...(edge.arrowType === "bidirectional" ? { "marker-start": `url(#flora-arrowhead-start-${id})` } : {}),
   })}${dashAttr}/>`;
 
   if (edge.label) {
@@ -519,20 +522,31 @@ function renderEdgeSketchStr(edge: LayoutEdge, theme: FloraTheme): string {
     "stroke-linecap": "round", "stroke-linejoin": "round",
   })}${dashAttr}/>`;
 
-  // Sketchy arrowhead
-  const last = edge.points[edge.points.length - 1]!;
-  const prev = edge.points[edge.points.length - 2] || edge.points[0]!;
-  const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
-  const aLen = 10, spread = Math.PI / 6;
-  const a1x = last.x - aLen * Math.cos(angle - spread) + rng.offset(0.6);
-  const a1y = last.y - aLen * Math.sin(angle - spread) + rng.offset(0.6);
-  const a2x = last.x - aLen * Math.cos(angle + spread) + rng.offset(0.6);
-  const a2y = last.y - aLen * Math.sin(angle + spread) + rng.offset(0.6);
-  inner += `<path ${attrs({
-    d: `M ${a1x.toFixed(2)} ${a1y.toFixed(2)} L ${last.x.toFixed(2)} ${last.y.toFixed(2)} L ${a2x.toFixed(2)} ${a2y.toFixed(2)}`,
-    fill: "none", stroke: theme.edgeColors.stroke,
-    "stroke-width": "1.5", "stroke-linecap": "round", "stroke-linejoin": "round",
-  })}/>`;
+  // Sketchy arrowhead(s)
+  function drawArrowheadStr(tip: { x: number; y: number }, toward: { x: number; y: number }): string {
+    const angle = Math.atan2(tip.y - toward.y, tip.x - toward.x);
+    const aLen = 10, spread = Math.PI / 6;
+    const a1x = tip.x - aLen * Math.cos(angle - spread) + rng.offset(0.6);
+    const a1y = tip.y - aLen * Math.sin(angle - spread) + rng.offset(0.6);
+    const a2x = tip.x - aLen * Math.cos(angle + spread) + rng.offset(0.6);
+    const a2y = tip.y - aLen * Math.sin(angle + spread) + rng.offset(0.6);
+    return `<path ${attrs({
+      d: `M ${a1x.toFixed(2)} ${a1y.toFixed(2)} L ${tip.x.toFixed(2)} ${tip.y.toFixed(2)} L ${a2x.toFixed(2)} ${a2y.toFixed(2)}`,
+      fill: "none", stroke: theme.edgeColors.stroke,
+      "stroke-width": "1.5", "stroke-linecap": "round", "stroke-linejoin": "round",
+    })}/>`;
+  }
+
+  if (edge.arrowType !== "open") {
+    const last = edge.points[edge.points.length - 1]!;
+    const prev = edge.points[edge.points.length - 2] || edge.points[0]!;
+    inner += drawArrowheadStr(last, prev);
+  }
+  if (edge.arrowType === "bidirectional") {
+    const first = edge.points[0]!;
+    const second = edge.points[1] || edge.points[edge.points.length - 1]!;
+    inner += drawArrowheadStr(first, second);
+  }
 
   if (edge.label) {
     const midIdx = Math.floor(edge.points.length / 2);
@@ -624,6 +638,23 @@ function renderSubgraphSketchStr(sg: LayoutSubgraph, theme: FloraTheme): string 
 }
 
 // ---------------------------------------------------------------------------
+// Node links
+// ---------------------------------------------------------------------------
+
+/** Wrap a linked node in an SVG <a> so clicking it navigates. */
+function wrapNodeLinkStr(node: LayoutNode, nodeStr: string): string {
+  if (!node.link) return nodeStr;
+
+  let anchorAttrs = `href="${escapeXml(node.link.url)}"`;
+  if (node.link.target) {
+    anchorAttrs += ` target="${escapeXml(node.link.target)}"`;
+    if (node.link.target === "_blank") anchorAttrs += ` rel="noopener noreferrer"`;
+  }
+  const title = node.link.tooltip ? `<title>${escapeXml(node.link.tooltip)}</title>` : "";
+  return `<a ${anchorAttrs}>${title}${nodeStr}</a>`;
+}
+
+// ---------------------------------------------------------------------------
 // Main entry
 // ---------------------------------------------------------------------------
 
@@ -666,7 +697,8 @@ export function renderSVGString(layout: LayoutResult, options: RenderSVGStringOp
     content += sketch ? renderEdgeSketchStr(edge, theme) : renderEdgeStr(edge, theme, id);
   }
   for (const node of layout.nodes) {
-    content += sketch ? renderNodeSketchStr(node, theme) : renderNodeStr(node, theme, id);
+    const nodeStr = sketch ? renderNodeSketchStr(node, theme) : renderNodeStr(node, theme, id);
+    content += wrapNodeLinkStr(node, nodeStr);
   }
 
   svg += `<g transform="translate(${padding},${padding})">${content}</g>`;

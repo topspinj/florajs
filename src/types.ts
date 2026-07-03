@@ -4,17 +4,33 @@ export type FlowchartDirection = "TB" | "TD" | "BT" | "LR" | "RL";
 
 export type NodeShape = "rect" | "rounded" | "diamond" | "circle" | "stadium" | "cylinder" | "queue";
 
+/** A clickable link attached to a node via the `click` directive. */
+export interface NodeLink {
+  url: string;
+  tooltip?: string;
+  target?: "_self" | "_blank" | "_parent" | "_top";
+}
+
 export interface FlowchartNode {
   id: string;
   label: string;
   shape: NodeShape;
+  link?: NodeLink;
 }
+
+/**
+ * "arrow"         — directed edge with an arrowhead at the target (default).
+ * "open"          — undirected edge with no arrowheads.
+ * "bidirectional" — arrowheads at both ends.
+ */
+export type EdgeArrowType = "arrow" | "open" | "bidirectional";
 
 export interface FlowchartEdge {
   from: string;
   to: string;
   label?: string;
   style: "solid" | "dotted" | "thick";
+  arrowType?: EdgeArrowType;
 }
 
 export interface FlowchartSubgraph {
@@ -47,6 +63,7 @@ export interface LayoutNode {
   height: number;
   label: string;
   shape: NodeShape;
+  link?: NodeLink;
 }
 
 export interface LayoutSubgraph {
@@ -65,6 +82,7 @@ export interface LayoutEdge {
   to: string;
   label?: string;
   style: "solid" | "dotted" | "thick";
+  arrowType?: EdgeArrowType;
   points: Array<{ x: number; y: number }>;
 }
 

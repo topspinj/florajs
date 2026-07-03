@@ -160,6 +160,7 @@ export function computeLayout(
       height: dagreNode.height,
       label: node.label,
       shape: node.shape,
+      link: node.link,
     };
   });
 
@@ -186,6 +187,7 @@ export function computeLayout(
         to: edge.to,
         label: edge.label,
         style: edge.style,
+        arrowType: edge.arrowType,
         points,
       };
     });

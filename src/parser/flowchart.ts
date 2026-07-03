@@ -5,6 +5,7 @@ import type {
   FlowchartEdge,
   FlowchartNode,
   FlowchartSubgraph,
+  NodeLink,
   NodeShape,
   ParseWarning,
 } from "../types.js";
@@ -20,6 +21,10 @@ function inferShape(tokens: Token[], start: number): { shape: NodeShape; label: 
   if (token.type === "open_paren") {
     const textToken = tokens[start + 1];
     return { shape: "rounded", label: textToken?.value ?? "" };
+  }
+  if (token.type === "open_circle") {
+    const textToken = tokens[start + 1];
+    return { shape: "circle", label: textToken?.value ?? "" };
   }
   if (token.type === "open_brace") {
     const textToken = tokens[start + 1];
@@ -46,10 +51,22 @@ function arrowStyle(arrow: string): FlowchartEdge["style"] {
   return "solid";
 }
 
+function isEdgeToken(token: Token): boolean {
+  return token.type === "arrow" || token.type === "link";
+}
+
+// "--", "==", "-.", "<--" — the start of an inline edge label, as in
+// "A -- text --> B", "A -- text --- B" or "A <-- text --> B". The closing
+// arrow/link determines the edge kind.
+function isLabelOpener(token: Token): boolean {
+  return token.type === "identifier" && /^<?[-=.]{2}$/.test(token.value);
+}
+
 export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): FlowchartAST {
   const nodes = new Map<string, FlowchartNode>();
   const edges: FlowchartEdge[] = [];
   const subgraphs: FlowchartSubgraph[] = [];
+  const clickBindings: Array<{ nodeId: string; link: NodeLink; token: Token }> = [];
   let direction: FlowchartDirection = "TB";
   let pos = 0;
 
@@ -114,11 +131,13 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
         pos < tokens.length &&
         tokens[pos]!.type !== "newline" &&
         tokens[pos]!.type !== "arrow" &&
+        tokens[pos]!.type !== "link" &&
         tokens[pos]!.type !== "eof"
       ) {
         if (
           tokens[pos]!.type === "close_bracket" ||
           tokens[pos]!.type === "close_paren" ||
+          tokens[pos]!.type === "close_circle" ||
           tokens[pos]!.type === "close_brace" ||
           tokens[pos]!.type === "close_stadium" ||
           tokens[pos]!.type === "close_cylinder" ||
@@ -145,12 +164,41 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
     try {
       parseNodeDefinition(currentId);
 
-      while (current().type === "arrow") {
-        const arrow = current().value;
+      while (isEdgeToken(current()) || isLabelOpener(current())) {
+        let edgeLabel: string | undefined;
+        let arrow = current().value;
+
+        if (isLabelOpener(current())) {
+          const opener = current();
+          pos++;
+          const labelParts: string[] = [];
+          while (
+            !isEdgeToken(current()) &&
+            !isStatementTerminator(current()) &&
+            (current().type === "identifier" ||
+              current().type === "text" ||
+              current().type === "direction")
+          ) {
+            labelParts.push(current().value);
+            pos++;
+          }
+          if (!isEdgeToken(current())) {
+            return abandon(
+              `Edge label opened with '${opener.value}' but not closed with an arrow — line skipped`,
+              opener,
+            );
+          }
+          edgeLabel = labelParts.join(" ");
+          arrow = opener.value + current().value;
+        }
+
         const style = arrowStyle(arrow);
+        const arrowType: FlowchartEdge["arrowType"] =
+          current().type === "link" ? "open"
+            : arrow.startsWith("<") ? "bidirectional"
+            : "arrow";
         pos++;
 
-        let edgeLabel: string | undefined;
         if (current().type === "pipe_text") {
           edgeLabel = current().value;
           pos++;
@@ -169,6 +217,7 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
             to: nextId,
             label: edgeLabel,
             style,
+            arrowType,
           });
 
           currentId = nextId;
@@ -206,6 +255,69 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
     return nodeIds;
   }
 
+  // Parse "click <nodeId> "<url>" ["<tooltip>"] [_self|_blank|_parent|_top]".
+  // The binding is applied after the whole diagram is parsed, so click lines
+  // may appear before the node they reference.
+  function parseClickStatement(): void {
+    const clickToken = current();
+    pos++;
+
+    function fail(message: string): void {
+      warnings.push({ line: clickToken.line, col: clickToken.col, message, severity: "error" });
+      skipToNextLine();
+    }
+
+    if (current().type !== "identifier") {
+      return fail("'click' requires a node id — line skipped");
+    }
+    const nodeId = current().value;
+    pos++;
+
+    if (current().type !== "text") {
+      // "click A someCallback" — Mermaid's callback form, deliberately ignored
+      if (current().type === "identifier") {
+        warnings.push({
+          line: clickToken.line,
+          col: clickToken.col,
+          message: `click callback for '${nodeId}' ignored — use the onNodeClick option; only quoted URL bindings are applied`,
+          severity: "info",
+        });
+        skipToNextLine();
+        return;
+      }
+      return fail(`'click ${nodeId}' requires a quoted URL — line skipped`);
+    }
+    const url = current().value.trim();
+    pos++;
+
+    let tooltip: string | undefined;
+    let target: NodeLink["target"];
+    while (!isStatementTerminator(current())) {
+      const token = current();
+      if (token.type === "text" && tooltip === undefined) {
+        tooltip = token.value;
+        pos++;
+      } else if (
+        token.type === "identifier" &&
+        /^_(self|blank|parent|top)$/.test(token.value) &&
+        target === undefined
+      ) {
+        target = token.value as NodeLink["target"];
+        pos++;
+      } else {
+        return fail(
+          `Unexpected '${token.value || token.type}' in click binding for '${nodeId}' — line skipped`,
+        );
+      }
+    }
+
+    if (/^(javascript|data|vbscript):/i.test(url)) {
+      return fail(`Unsafe URL scheme in click binding for '${nodeId}' — line skipped`);
+    }
+
+    clickBindings.push({ nodeId, link: { url, tooltip, target }, token: clickToken });
+  }
+
   function parseSubgraph(lineStartToken: Token, parentId?: string): void {
     pos++; // skip "subgraph"
     const id = current().value;
@@ -234,6 +346,11 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
       if (current().type === "keyword" && current().value === "subgraph") {
         const nestedStart = current();
         parseSubgraph(nestedStart, id);
+        continue;
+      }
+
+      if (current().type === "keyword" && current().value === "click") {
+        parseClickStatement();
         continue;
       }
 
@@ -284,6 +401,11 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
       continue;
     }
 
+    if (current().type === "keyword" && current().value === "click") {
+      parseClickStatement();
+      continue;
+    }
+
     if (current().type === "identifier") {
       parseStatement();
       continue;
@@ -298,6 +420,21 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
       severity: "error",
     });
     skipToNextLine();
+  }
+
+  // Apply click bindings now that every node has been parsed.
+  for (const binding of clickBindings) {
+    const node = nodes.get(binding.nodeId);
+    if (!node) {
+      warnings.push({
+        line: binding.token.line,
+        col: binding.token.col,
+        message: `click binding references unknown node '${binding.nodeId}'`,
+        severity: "error",
+      });
+      continue;
+    }
+    node.link = binding.link;
   }
 
   return {

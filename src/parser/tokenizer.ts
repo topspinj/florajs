@@ -6,11 +6,14 @@ export type TokenType =
   | "identifier"
   | "text"
   | "arrow"
+  | "link"
   | "pipe_text"
   | "open_bracket"
   | "close_bracket"
   | "open_paren"
   | "close_paren"
+  | "open_circle"
+  | "close_circle"
   | "open_brace"
   | "close_brace"
   | "open_diamond"
@@ -40,13 +43,12 @@ const KEYWORDS = new Set(["flowchart", "graph", "subgraph", "end"]);
 const DIRECTIONS = new Set(["TB", "TD", "BT", "LR", "RL"]);
 
 // Mermaid directives Flora understands but deliberately does not act on.
-// Styling is handled by themes; click bindings by the onNodeClick option.
+// Styling is handled by themes.
 const IGNORED_DIRECTIVES = new Map<string, string>([
   ["classDef", "styling directive — Flora handles styling through themes"],
   ["class", "styling directive — Flora handles styling through themes"],
   ["style", "styling directive — Flora handles styling through themes"],
   ["linkStyle", "styling directive — Flora handles styling through themes"],
-  ["click", "click binding — use the onNodeClick option instead"],
   ["direction", "subgraph direction is not supported yet"],
 ]);
 
@@ -196,8 +198,12 @@ export function tokenize(input: string): TokenizeResult {
       continue;
     }
 
-    if (ch === "-" || ch === "=" || ch === ".") {
+    if (
+      ch === "-" || ch === "=" || ch === "." ||
+      (ch === "<" && /[-=.]/.test(input[pos + 1] ?? ""))
+    ) {
       let arrow = "";
+      if (ch === "<") arrow += advance();
       while (pos < input.length && /[-=.>]/.test(input[pos]!)) {
         arrow += advance();
       }
@@ -205,6 +211,12 @@ export function tokenize(input: string): TokenizeResult {
         tokens.push({ type: "arrow", value: arrow, line: startLine, col: startCol });
         continue;
       }
+      if (!arrow.startsWith("<") && arrow.length >= 3) {
+        // "---", "-.-", "===" — an open (undirected) link
+        tokens.push({ type: "link", value: arrow, line: startLine, col: startCol });
+        continue;
+      }
+      // "--", "-." (label openers) or "<--" (bidirectional label opener)
       tokens.push({ type: "identifier", value: arrow, line: startLine, col: startCol });
       continue;
     }
@@ -258,7 +270,14 @@ export function tokenize(input: string): TokenizeResult {
 
     if (ch === "(") {
       advance();
-      if (peek() === "[") {
+      if (peek() === "(") {
+        advance();
+        const text = readBracketedText(")");
+        if (peek() === ")") advance();
+        tokens.push({ type: "open_circle", value: "((", line: startLine, col: startCol });
+        tokens.push({ type: "text", value: text, line: startLine, col: startCol + 2 });
+        tokens.push({ type: "close_circle", value: "))", line: startLine, col: col });
+      } else if (peek() === "[") {
         advance();
         const text = readBracketedText("]");
         if (peek() === ")") advance();
@@ -305,6 +324,12 @@ export function tokenize(input: string): TokenizeResult {
           severity: "info",
         });
         skipRestOfLine();
+        continue;
+      }
+      // "click" starts a link-binding statement at the start of a line, unless
+      // it is immediately followed by a shape bracket (then it's a node id).
+      if (atLineStart() && word === "click" && !/[[({]/.test(peek())) {
+        tokens.push({ type: "keyword", value: word, line: startLine, col: startCol });
         continue;
       }
       if (KEYWORDS.has(word)) {
