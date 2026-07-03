@@ -1,8 +1,7 @@
-<p align="center">
-  <img src="https://florajs.dev/logo.png" alt="Flora logo" width="140" />
-</p>
-
-# Flora
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://florajs.dev/logo-wordmark-dark.png">
+  <img src="https://florajs.dev/logo-wordmark.png" alt="Flora" width="380">
+</picture>
 
 Beautiful, interactive diagrams from Mermaid-compatible syntax.
 
