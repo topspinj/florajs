@@ -267,6 +267,8 @@ export type {
   FlowchartEdge,
   FlowchartSubgraph,
   FlowchartDirection,
+  EdgeArrowType,
+  NodeLink,
   NodeShape,
   LayoutResult,
   LayoutNode,

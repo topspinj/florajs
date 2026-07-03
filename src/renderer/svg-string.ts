@@ -638,6 +638,23 @@ function renderSubgraphSketchStr(sg: LayoutSubgraph, theme: FloraTheme): string 
 }
 
 // ---------------------------------------------------------------------------
+// Node links
+// ---------------------------------------------------------------------------
+
+/** Wrap a linked node in an SVG <a> so clicking it navigates. */
+function wrapNodeLinkStr(node: LayoutNode, nodeStr: string): string {
+  if (!node.link) return nodeStr;
+
+  let anchorAttrs = `href="${escapeXml(node.link.url)}"`;
+  if (node.link.target) {
+    anchorAttrs += ` target="${escapeXml(node.link.target)}"`;
+    if (node.link.target === "_blank") anchorAttrs += ` rel="noopener noreferrer"`;
+  }
+  const title = node.link.tooltip ? `<title>${escapeXml(node.link.tooltip)}</title>` : "";
+  return `<a ${anchorAttrs}>${title}${nodeStr}</a>`;
+}
+
+// ---------------------------------------------------------------------------
 // Main entry
 // ---------------------------------------------------------------------------
 
@@ -680,7 +697,8 @@ export function renderSVGString(layout: LayoutResult, options: RenderSVGStringOp
     content += sketch ? renderEdgeSketchStr(edge, theme) : renderEdgeStr(edge, theme, id);
   }
   for (const node of layout.nodes) {
-    content += sketch ? renderNodeSketchStr(node, theme) : renderNodeStr(node, theme, id);
+    const nodeStr = sketch ? renderNodeSketchStr(node, theme) : renderNodeStr(node, theme, id);
+    content += wrapNodeLinkStr(node, nodeStr);
   }
 
   svg += `<g transform="translate(${padding},${padding})">${content}</g>`;

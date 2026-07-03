@@ -5,6 +5,7 @@ import type {
   FlowchartEdge,
   FlowchartNode,
   FlowchartSubgraph,
+  NodeLink,
   NodeShape,
   ParseWarning,
 } from "../types.js";
@@ -65,6 +66,7 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
   const nodes = new Map<string, FlowchartNode>();
   const edges: FlowchartEdge[] = [];
   const subgraphs: FlowchartSubgraph[] = [];
+  const clickBindings: Array<{ nodeId: string; link: NodeLink; token: Token }> = [];
   let direction: FlowchartDirection = "TB";
   let pos = 0;
 
@@ -253,6 +255,69 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
     return nodeIds;
   }
 
+  // Parse "click <nodeId> "<url>" ["<tooltip>"] [_self|_blank|_parent|_top]".
+  // The binding is applied after the whole diagram is parsed, so click lines
+  // may appear before the node they reference.
+  function parseClickStatement(): void {
+    const clickToken = current();
+    pos++;
+
+    function fail(message: string): void {
+      warnings.push({ line: clickToken.line, col: clickToken.col, message, severity: "error" });
+      skipToNextLine();
+    }
+
+    if (current().type !== "identifier") {
+      return fail("'click' requires a node id — line skipped");
+    }
+    const nodeId = current().value;
+    pos++;
+
+    if (current().type !== "text") {
+      // "click A someCallback" — Mermaid's callback form, deliberately ignored
+      if (current().type === "identifier") {
+        warnings.push({
+          line: clickToken.line,
+          col: clickToken.col,
+          message: `click callback for '${nodeId}' ignored — use the onNodeClick option; only quoted URL bindings are applied`,
+          severity: "info",
+        });
+        skipToNextLine();
+        return;
+      }
+      return fail(`'click ${nodeId}' requires a quoted URL — line skipped`);
+    }
+    const url = current().value.trim();
+    pos++;
+
+    let tooltip: string | undefined;
+    let target: NodeLink["target"];
+    while (!isStatementTerminator(current())) {
+      const token = current();
+      if (token.type === "text" && tooltip === undefined) {
+        tooltip = token.value;
+        pos++;
+      } else if (
+        token.type === "identifier" &&
+        /^_(self|blank|parent|top)$/.test(token.value) &&
+        target === undefined
+      ) {
+        target = token.value as NodeLink["target"];
+        pos++;
+      } else {
+        return fail(
+          `Unexpected '${token.value || token.type}' in click binding for '${nodeId}' — line skipped`,
+        );
+      }
+    }
+
+    if (/^(javascript|data|vbscript):/i.test(url)) {
+      return fail(`Unsafe URL scheme in click binding for '${nodeId}' — line skipped`);
+    }
+
+    clickBindings.push({ nodeId, link: { url, tooltip, target }, token: clickToken });
+  }
+
   function parseSubgraph(lineStartToken: Token, parentId?: string): void {
     pos++; // skip "subgraph"
     const id = current().value;
@@ -281,6 +346,11 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
       if (current().type === "keyword" && current().value === "subgraph") {
         const nestedStart = current();
         parseSubgraph(nestedStart, id);
+        continue;
+      }
+
+      if (current().type === "keyword" && current().value === "click") {
+        parseClickStatement();
         continue;
       }
 
@@ -331,6 +401,11 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
       continue;
     }
 
+    if (current().type === "keyword" && current().value === "click") {
+      parseClickStatement();
+      continue;
+    }
+
     if (current().type === "identifier") {
       parseStatement();
       continue;
@@ -345,6 +420,21 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
       severity: "error",
     });
     skipToNextLine();
+  }
+
+  // Apply click bindings now that every node has been parsed.
+  for (const binding of clickBindings) {
+    const node = nodes.get(binding.nodeId);
+    if (!node) {
+      warnings.push({
+        line: binding.token.line,
+        col: binding.token.col,
+        message: `click binding references unknown node '${binding.nodeId}'`,
+        severity: "error",
+      });
+      continue;
+    }
+    node.link = binding.link;
   }
 
   return {

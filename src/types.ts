@@ -4,10 +4,18 @@ export type FlowchartDirection = "TB" | "TD" | "BT" | "LR" | "RL";
 
 export type NodeShape = "rect" | "rounded" | "diamond" | "circle" | "stadium" | "cylinder" | "queue";
 
+/** A clickable link attached to a node via the `click` directive. */
+export interface NodeLink {
+  url: string;
+  tooltip?: string;
+  target?: "_self" | "_blank" | "_parent" | "_top";
+}
+
 export interface FlowchartNode {
   id: string;
   label: string;
   shape: NodeShape;
+  link?: NodeLink;
 }
 
 /**
@@ -55,6 +63,7 @@ export interface LayoutNode {
   height: number;
   label: string;
   shape: NodeShape;
+  link?: NodeLink;
 }
 
 export interface LayoutSubgraph {

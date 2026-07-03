@@ -18,6 +18,7 @@ const base = import.meta.env.BASE_URL;
           <h3>Syntax</h3>
           <a href="#nodes">Nodes &amp; Shapes</a>
           <a href="#edges">Edges</a>
+          <a href="#node-links">Node Links</a>
           <a href="#directions">Directions</a>
           <a href="#subgraphs">Subgraphs</a>
         </div>
@@ -513,6 +514,41 @@ flowchart LR
         <pre><code>A <span class="t-op">--&gt;</span> B <span class="t-op">--&gt;</span> C <span class="t-op">--&gt;</span> D</code></pre>
       </section>
 
+      <section id="node-links">
+        <h2>Node Links</h2>
+        <p>
+          Attach a clickable link to a node with Mermaid's <code>click</code> directive. The node is
+          wrapped in an SVG <code>&lt;a&gt;</code>, so clicking it navigates to the URL &mdash; useful
+          for linking to documentation, dashboards, or source code.
+        </p>
+        <pre><code><span class="t-kw">flowchart</span> <span class="t-dir">LR</span>
+  A<span class="t-op">[</span><span class="t-str">Docs</span><span class="t-op">]</span> <span class="t-op">--&gt;</span> B<span class="t-op">[</span><span class="t-str">API</span><span class="t-op">]</span>
+  <span class="t-kw">click</span> A <span class="t-str">"https://docs.example.com"</span> <span class="t-str">"Open docs"</span>
+  <span class="t-kw">click</span> B <span class="t-str">"https://api.example.com"</span> _blank</code></pre>
+        <div class="shape-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Form</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>click A "url"</code></td><td>Node navigates to the URL when clicked</td></tr>
+              <tr><td><code>click A "url" "tooltip"</code></td><td>Adds a hover tooltip (<code>&lt;title&gt;</code>)</td></tr>
+              <tr><td><code>click A "url" _blank</code></td><td>Opens in a new tab &mdash; also <code>_self</code>, <code>_parent</code>, <code>_top</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Click lines may appear before or after the node they reference. Unsafe URL schemes
+          (<code>javascript:</code>, <code>data:</code>, <code>vbscript:</code>) are rejected with a
+          diagnostic. Mermaid's callback form (<code>click A myCallback</code>) is deliberately
+          ignored &mdash; use the <a href="#interactivity"><code>onNodeClick</code></a> option instead,
+          which still fires alongside link navigation.
+        </p>
+      </section>
+
       <section id="directions">
         <h2>Directions</h2>
         <p>Set the flow direction after the <code>flowchart</code> keyword:</p>
@@ -809,6 +845,7 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>FlowchartDirection</code></td><td><code>"TB" | "TD" | "BT" | "LR" | "RL"</code></td></tr>
               <tr><td><code>NodeShape</code></td><td><code>"rect" | "rounded" | "diamond" | "circle" | "stadium" | "cylinder" | "queue"</code></td></tr>
               <tr><td><code>EdgeArrowType</code></td><td><code>"arrow" | "open" | "bidirectional"</code> &mdash; arrowhead placement on edges</td></tr>
+              <tr><td><code>NodeLink</code></td><td><code>&#123; url, tooltip?, target? &#125;</code> &mdash; a clickable link from a <code>click</code> directive</td></tr>
               <tr><td><code>ThemePreset</code></td><td><code>"default" | "tufte" | "digital" | "sketch"</code></td></tr>
             </tbody>
           </table>
@@ -844,6 +881,7 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>id</code></td><td><code>string</code></td><td>Unique node identifier</td></tr>
               <tr><td><code>label</code></td><td><code>string</code></td><td>Display text</td></tr>
               <tr><td><code>shape</code></td><td><code>NodeShape</code></td><td>Visual shape of the node</td></tr>
+              <tr><td><code>link</code></td><td><code>NodeLink?</code></td><td>Clickable link from a <code>click</code> directive</td></tr>
             </tbody>
           </table>
         </div>
@@ -915,6 +953,7 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>width</code>, <code>height</code></td><td><code>number</code></td><td>Dimensions</td></tr>
               <tr><td><code>label</code></td><td><code>string</code></td><td>Display text</td></tr>
               <tr><td><code>shape</code></td><td><code>NodeShape</code></td><td>Visual shape</td></tr>
+              <tr><td><code>link</code></td><td><code>NodeLink?</code></td><td>Clickable link from a <code>click</code> directive</td></tr>
             </tbody>
           </table>
         </div>

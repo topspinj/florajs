@@ -160,6 +160,7 @@ export function computeLayout(
       height: dagreNode.height,
       label: node.label,
       shape: node.shape,
+      link: node.link,
     };
   });
 

@@ -792,6 +792,28 @@ function renderSubgraph(sg: LayoutSubgraph, theme: FloraTheme): SVGGElement {
 }
 
 // ---------------------------------------------------------------------------
+// Node links
+// ---------------------------------------------------------------------------
+
+/** Wrap a linked node in an SVG <a> so clicking it navigates. */
+function wrapNodeLink(node: LayoutNode, nodeEl: SVGGElement): SVGElement {
+  if (!node.link) return nodeEl;
+
+  const anchor = el("a", { href: node.link.url }) as SVGAElement;
+  if (node.link.target) {
+    anchor.setAttribute("target", node.link.target);
+    if (node.link.target === "_blank") anchor.setAttribute("rel", "noopener noreferrer");
+  }
+  if (node.link.tooltip) {
+    const title = el("title", {});
+    title.textContent = node.link.tooltip;
+    anchor.appendChild(title);
+  }
+  anchor.appendChild(nodeEl);
+  return anchor;
+}
+
+// ---------------------------------------------------------------------------
 // Zoom / pan
 // ---------------------------------------------------------------------------
 
@@ -923,7 +945,8 @@ export function renderSVG(
   }
 
   for (const node of layout.nodes) {
-    content.appendChild(sketch ? renderNodeSketch(node, theme, options) : renderNode(node, theme, options, id));
+    const nodeEl = sketch ? renderNodeSketch(node, theme, options) : renderNode(node, theme, options, id);
+    content.appendChild(wrapNodeLink(node, nodeEl));
   }
 
   svg.appendChild(content);

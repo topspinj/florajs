@@ -243,6 +243,77 @@ describe("flowchart parser", () => {
     expect(ast.edges).toHaveLength(3);
   });
 
+  it("parses click bindings with a URL", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      A[Docs] --> B[API]
+      click A "https://docs.example.com"`);
+
+    const node = ast.nodes.find((n) => n.id === "A");
+    expect(node!.link).toEqual({ url: "https://docs.example.com", tooltip: undefined, target: undefined });
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("parses click bindings with tooltip and target", () => {
+    const { ast } = parse(`flowchart LR
+      A --> B
+      click A "https://docs.example.com" "Open docs"
+      click B "https://api.example.com" _blank`);
+
+    expect(ast.nodes.find((n) => n.id === "A")!.link).toEqual({
+      url: "https://docs.example.com",
+      tooltip: "Open docs",
+      target: undefined,
+    });
+    expect(ast.nodes.find((n) => n.id === "B")!.link).toEqual({
+      url: "https://api.example.com",
+      tooltip: undefined,
+      target: "_blank",
+    });
+  });
+
+  it("parses click bindings that appear before the node definition", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      click A "https://example.com"
+      A[Late] --> B`);
+
+    expect(ast.nodes.find((n) => n.id === "A")!.link!.url).toBe("https://example.com");
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("warns when a click binding references an unknown node", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      A --> B
+      click Missing "https://example.com"`);
+
+    expect(ast.nodes.every((n) => !n.link)).toBe(true);
+    expect(warnings.some((w) => w.severity === "error" && w.message.includes("Missing"))).toBe(true);
+  });
+
+  it("rejects unsafe URL schemes in click bindings", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      A --> B
+      click A "javascript:alert(1)"`);
+
+    expect(ast.nodes.find((n) => n.id === "A")!.link).toBeUndefined();
+    expect(warnings.some((w) => w.severity === "error" && w.message.includes("Unsafe URL"))).toBe(true);
+  });
+
+  it("warns when a click binding has no quoted URL", () => {
+    const { warnings } = parse(`flowchart LR
+      A --> B
+      click A`);
+
+    expect(warnings.some((w) => w.severity === "error" && w.message.includes("URL"))).toBe(true);
+  });
+
+  it("still allows a node named click", () => {
+    const { ast } = parse(`flowchart LR
+      click[Click me] --> B`);
+
+    expect(ast.nodes.find((n) => n.id === "click")!.label).toBe("Click me");
+    expect(ast.edges).toHaveLength(1);
+  });
+
   it("defaults to TB direction", () => {
     const { ast } = parse(`flowchart
       A --> B`);
