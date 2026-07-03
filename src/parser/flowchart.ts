@@ -50,6 +50,16 @@ function arrowStyle(arrow: string): FlowchartEdge["style"] {
   return "solid";
 }
 
+function isEdgeToken(token: Token): boolean {
+  return token.type === "arrow" || token.type === "link";
+}
+
+// "--", "==", "-." — the start of an inline edge label, as in "A -- text --> B"
+// or "A -- text --- B". The closing arrow/link determines the edge kind.
+function isLabelOpener(token: Token): boolean {
+  return token.type === "identifier" && /^[-=.]{2}$/.test(token.value);
+}
+
 export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): FlowchartAST {
   const nodes = new Map<string, FlowchartNode>();
   const edges: FlowchartEdge[] = [];
@@ -118,6 +128,7 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
         pos < tokens.length &&
         tokens[pos]!.type !== "newline" &&
         tokens[pos]!.type !== "arrow" &&
+        tokens[pos]!.type !== "link" &&
         tokens[pos]!.type !== "eof"
       ) {
         if (
@@ -150,12 +161,39 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
     try {
       parseNodeDefinition(currentId);
 
-      while (current().type === "arrow") {
-        const arrow = current().value;
+      while (isEdgeToken(current()) || isLabelOpener(current())) {
+        let edgeLabel: string | undefined;
+        let arrow = current().value;
+
+        if (isLabelOpener(current())) {
+          const opener = current();
+          pos++;
+          const labelParts: string[] = [];
+          while (
+            !isEdgeToken(current()) &&
+            !isStatementTerminator(current()) &&
+            (current().type === "identifier" ||
+              current().type === "text" ||
+              current().type === "direction")
+          ) {
+            labelParts.push(current().value);
+            pos++;
+          }
+          if (!isEdgeToken(current())) {
+            return abandon(
+              `Edge label opened with '${opener.value}' but not closed with an arrow — line skipped`,
+              opener,
+            );
+          }
+          edgeLabel = labelParts.join(" ");
+          arrow = opener.value + current().value;
+        }
+
         const style = arrowStyle(arrow);
+        const arrowType: FlowchartEdge["arrowType"] =
+          current().type === "link" ? "open" : "arrow";
         pos++;
 
-        let edgeLabel: string | undefined;
         if (current().type === "pipe_text") {
           edgeLabel = current().value;
           pos++;
@@ -174,6 +212,7 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
             to: nextId,
             label: edgeLabel,
             style,
+            arrowType,
           });
 
           currentId = nextId;

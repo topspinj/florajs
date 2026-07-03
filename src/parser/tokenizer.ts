@@ -6,6 +6,7 @@ export type TokenType =
   | "identifier"
   | "text"
   | "arrow"
+  | "link"
   | "pipe_text"
   | "open_bracket"
   | "close_bracket"
@@ -205,6 +206,11 @@ export function tokenize(input: string): TokenizeResult {
       }
       if (arrow.includes(">")) {
         tokens.push({ type: "arrow", value: arrow, line: startLine, col: startCol });
+        continue;
+      }
+      if (arrow.length >= 3) {
+        // "---", "-.-", "===" — an open (undirected) link
+        tokens.push({ type: "link", value: arrow, line: startLine, col: startCol });
         continue;
       }
       tokens.push({ type: "identifier", value: arrow, line: startLine, col: startCol });

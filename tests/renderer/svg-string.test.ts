@@ -47,6 +47,16 @@ describe("renderSVGString", () => {
     expect(svg).toContain("Cylinder");
   });
 
+  it("omits the arrowhead marker on open links", () => {
+    const svg = renderFromSource("flowchart LR\n  A --- B");
+    expect(svg).not.toContain("marker-end");
+  });
+
+  it("keeps the arrowhead marker on directed edges", () => {
+    const svg = renderFromSource("flowchart LR\n  A --> B");
+    expect(svg).toContain("marker-end");
+  });
+
   it("applies digital (dark) theme", () => {
     const svg = renderFromSource("flowchart TD\n  A --> B", "digital");
     expect(svg).toContain("#0F172A"); // digital theme background

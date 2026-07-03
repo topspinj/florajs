@@ -460,42 +460,48 @@ flowchart LR
 
       <section id="edges">
         <h2>Edges</h2>
-        <p>Three edge styles are supported:</p>
+        <p>Edges come in three stroke styles, each in directed and open (undirected) form:</p>
 
         <div class="shape-table">
           <table>
             <thead>
               <tr>
                 <th>Style</th>
-                <th>Syntax</th>
-                <th>Example</th>
+                <th>Directed</th>
+                <th>Open (no arrow)</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td>Solid</td>
-                <td><code>--&gt;</code></td>
                 <td><code>A --&gt; B</code></td>
+                <td><code>A --- B</code></td>
               </tr>
               <tr>
                 <td>Dotted</td>
-                <td><code>-.-&gt;</code></td>
                 <td><code>A -.-&gt; B</code></td>
+                <td><code>A -.- B</code></td>
               </tr>
               <tr>
                 <td>Thick</td>
-                <td><code>==&gt;</code></td>
                 <td><code>A ==&gt; B</code></td>
+                <td><code>A === B</code></td>
               </tr>
             </tbody>
           </table>
         </div>
+        <p>
+          Open links render with no arrowhead — useful in architecture diagrams where the relationship
+          isn't directional. Click-to-highlight traverses them in both directions.
+        </p>
 
         <h3>Edge Labels</h3>
-        <p>Add labels between pipe characters:</p>
+        <p>Add labels between pipe characters, or inline between dashes:</p>
         <pre><code><span class="t-kw">flowchart</span> <span class="t-dir">LR</span>
   A <span class="t-op">--&gt;|</span><span class="t-lbl">yes</span><span class="t-op">|</span> B
-  A <span class="t-op">--&gt;|</span><span class="t-lbl">no</span><span class="t-op">|</span> C</code></pre>
+  A <span class="t-op">--&gt;|</span><span class="t-lbl">no</span><span class="t-op">|</span> C
+  A <span class="t-op">--</span> <span class="t-lbl">maybe</span> <span class="t-op">--&gt;</span> D
+  B <span class="t-op">--</span> <span class="t-lbl">pairs with</span> <span class="t-op">---</span> C</code></pre>
 
         <h3>Chains</h3>
         <p>Chain multiple nodes in a single line:</p>
@@ -797,6 +803,7 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>DiagramType</code></td><td><code>"flowchart" | "erd" | "unsupported"</code></td></tr>
               <tr><td><code>FlowchartDirection</code></td><td><code>"TB" | "TD" | "BT" | "LR" | "RL"</code></td></tr>
               <tr><td><code>NodeShape</code></td><td><code>"rect" | "rounded" | "diamond" | "circle" | "stadium" | "cylinder" | "queue"</code></td></tr>
+              <tr><td><code>EdgeArrowType</code></td><td><code>"arrow" | "open"</code> &mdash; directed (default) or undirected</td></tr>
               <tr><td><code>ThemePreset</code></td><td><code>"default" | "tufte" | "digital" | "sketch"</code></td></tr>
             </tbody>
           </table>
@@ -845,6 +852,7 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>to</code></td><td><code>string</code></td><td>Target node ID</td></tr>
               <tr><td><code>label</code></td><td><code>string?</code></td><td>Optional edge label</td></tr>
               <tr><td><code>style</code></td><td><code>"solid" | "dotted" | "thick"</code></td><td>Edge line style</td></tr>
+              <tr><td><code>arrowType</code></td><td><code>EdgeArrowType?</code></td><td>Arrowhead placement &mdash; <code>"arrow"</code> (default) or <code>"open"</code></td></tr>
             </tbody>
           </table>
         </div>
@@ -915,6 +923,7 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>to</code></td><td><code>string</code></td><td>Target node ID</td></tr>
               <tr><td><code>label</code></td><td><code>string?</code></td><td>Optional edge label</td></tr>
               <tr><td><code>style</code></td><td><code>"solid" | "dotted" | "thick"</code></td><td>Edge line style</td></tr>
+              <tr><td><code>arrowType</code></td><td><code>EdgeArrowType?</code></td><td>Arrowhead placement &mdash; <code>"arrow"</code> (default) or <code>"open"</code></td></tr>
               <tr><td><code>points</code></td><td><code>Array&lt;&#123; x: number; y: number &#125;&gt;</code></td><td>Routed edge waypoints</td></tr>
             </tbody>
           </table>

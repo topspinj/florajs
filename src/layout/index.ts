@@ -186,6 +186,7 @@ export function computeLayout(
         to: edge.to,
         label: edge.label,
         style: edge.style,
+        arrowType: edge.arrowType,
         points,
       };
     });

@@ -15,6 +15,15 @@ export function buildAdjacencyList(edges: LayoutEdge[]): AdjacencyList {
 
     if (!reverse.has(edge.to)) reverse.set(edge.to, []);
     reverse.get(edge.to)!.push(edge.from);
+
+    // Open (undirected) edges connect in both directions.
+    if (edge.arrowType === "open") {
+      if (!forward.has(edge.to)) forward.set(edge.to, []);
+      forward.get(edge.to)!.push(edge.from);
+
+      if (!reverse.has(edge.from)) reverse.set(edge.from, []);
+      reverse.get(edge.from)!.push(edge.to);
+    }
   }
 
   return { forward, reverse };

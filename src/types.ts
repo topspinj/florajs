@@ -10,11 +10,18 @@ export interface FlowchartNode {
   shape: NodeShape;
 }
 
+/**
+ * "arrow" — directed edge with an arrowhead at the target (default).
+ * "open"  — undirected edge with no arrowheads.
+ */
+export type EdgeArrowType = "arrow" | "open";
+
 export interface FlowchartEdge {
   from: string;
   to: string;
   label?: string;
   style: "solid" | "dotted" | "thick";
+  arrowType?: EdgeArrowType;
 }
 
 export interface FlowchartSubgraph {
@@ -65,6 +72,7 @@ export interface LayoutEdge {
   to: string;
   label?: string;
   style: "solid" | "dotted" | "thick";
+  arrowType?: EdgeArrowType;
   points: Array<{ x: number; y: number }>;
 }
 
