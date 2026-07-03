@@ -63,14 +63,27 @@ Nodes are defined inline with their shape syntax. If a node appears multiple tim
 A --> B          solid arrow
 A ==> B          thick arrow
 A -.-> B         dotted arrow
-A -->|label| B   solid arrow with label
-A ==>|label| B   thick arrow with label
-A -.->|label| B  dotted arrow with label
+A --- B          open link (no arrowhead — non-directional relationships)
+A <--> B         bidirectional arrow (two-way communication)
+A -->|label| B   arrow with label
 ```
+
+Dotted and thick edges follow the same pattern: `-.-` / `===` for open, `<-.->` / `<==>` for bidirectional. Chain multiple nodes in one line: `A --> B --> C --> D`.
 
 ### Edge Labels
 
-Labels go between pipes immediately after the arrow: `-->|Yes|`. The label text cannot contain `|` characters.
+Labels go between pipes immediately after the arrow: `-->|Yes|`. The label text cannot contain `|` characters. Inline labels between dashes also work: `A -- label --> B`.
+
+### Node Links
+
+Attach a clickable URL to a node with the `click` directive — useful for linking dbt models to their docs, or services to their dashboards:
+
+```
+click A "https://docs.example.com" "hover tooltip"
+click B "https://api.example.com" _blank
+```
+
+The tooltip and target (`_blank` etc.) are optional. Click lines may appear before or after the node they reference.
 
 ### Subgraphs
 
@@ -106,7 +119,7 @@ A --> B  %% Inline comments work too
 Flora is a Mermaid-compatible **subset**, not full Mermaid. Do not emit:
 
 - Styling directives: `classDef`, `class`, `style`, `linkStyle`, `%%{init}%%` — Flora recognizes and deliberately ignores these (styling goes through themes)
-- `click` directives — interactivity goes through `onNodeClick`
+- Mermaid's `click A myCallback` callback form — deliberately ignored; use the URL form (`click A "url"`) or the `onNodeClick` option instead
 - Other diagram types: `sequenceDiagram`, `classDiagram`, `erDiagram`, `gantt`, etc. Only `flowchart`/`graph` is supported.
 
 Lines Flora can't parse are skipped whole and reported as diagnostics — valid lines still render. Stick to the syntax documented above and the output will be clean.
