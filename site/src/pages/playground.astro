@@ -503,6 +503,37 @@ import Layout from "../layouts/Layout.astro";
     font-weight: 500;
   }
 
+  @media (max-width: 600px) {
+    .toolbar {
+      padding: 8px 12px;
+      gap: 8px;
+    }
+
+    .toolbar-group {
+      gap: 6px;
+    }
+
+    .btn {
+      font-size: 12px;
+      padding: 6px 10px;
+    }
+
+    .toolbar select {
+      font-size: 12px;
+      padding: 5px 6px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .toolbar-group {
+      gap: 4px;
+    }
+
+    .btn {
+      padding: 6px 8px;
+    }
+  }
+
   @media (max-width: 720px) {
     .split {
       flex-direction: column;

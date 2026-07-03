@@ -6,6 +6,8 @@ const base = import.meta.env.BASE_URL;
 <Layout title="Flora — Docs">
   <div class="docs-layout">
     <aside class="sidebar">
+      <input type="checkbox" id="sidebar-toggle" class="sidebar-check" />
+      <label for="sidebar-toggle" class="sidebar-summary">Contents</label>
       <nav class="sidebar-nav">
         <div class="sidebar-section">
           <h3>Getting Started</h3>
@@ -1373,6 +1375,11 @@ console.<span class="t-fn">log</span>(ast.edges);
     overflow-y: auto;
   }
 
+  .sidebar-check,
+  .sidebar-summary {
+    display: none;
+  }
+
   .sidebar-nav {
     display: flex;
     flex-direction: column;
@@ -1585,13 +1592,45 @@ console.<span class="t-fn">log</span>(ast.edges);
       height: auto;
       border-right: none;
       border-bottom: 1px solid var(--color-border);
-      padding: 20px 24px;
+      padding: 0;
+    }
+
+    .sidebar-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .sidebar-summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--color-text-muted);
+      border-bottom: 2px solid var(--color-text-muted);
+      transform: rotate(45deg);
+      transition: transform 0.15s;
+    }
+
+    .sidebar-check:checked ~ .sidebar-summary::after {
+      transform: rotate(225deg);
     }
 
     .sidebar-nav {
+      display: none;
       flex-direction: row;
       flex-wrap: wrap;
       gap: 16px;
+      padding: 4px 24px 20px;
+    }
+
+    .sidebar-check:checked ~ .sidebar-nav {
+      display: flex;
     }
 
     .docs-content {
