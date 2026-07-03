@@ -18,6 +18,9 @@ Open the [playground](https://florajs.dev/playground/) — write a diagram, watc
 npm install @topspinj/flora
 ```
 
+Using Python? The [`florajs` package](python/) brings Flora to Jupyter notebooks
+and headless SVG export: `pip install florajs`.
+
 ## Usage
 
 ```javascript

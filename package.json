@@ -28,6 +28,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "build:python": "tsup && node -e \"require('fs').copyFileSync('dist/flora.iife.js','python/src/florajs/_vendor/flora.iife.js')\"",
     "dev": "tsup --watch",
     "test": "vitest",
     "test:run": "vitest run",
