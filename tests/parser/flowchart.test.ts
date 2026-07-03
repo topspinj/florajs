@@ -16,6 +16,15 @@ describe("flowchart parser", () => {
     expect(warnings).toHaveLength(0);
   });
 
+  it("parses a header preceded by blank lines", () => {
+    const { ast, warnings } = parse(`\n\nflowchart LR\n  A --> B`);
+
+    expect(ast.type).toBe("flowchart");
+    expect(ast.direction).toBe("LR");
+    expect(ast.nodes).toHaveLength(2);
+    expect(warnings).toHaveLength(0);
+  });
+
   it("parses node labels in brackets", () => {
     const { ast } = parse(`flowchart TD
       A[Start] --> B[End]`);

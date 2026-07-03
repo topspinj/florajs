@@ -32,6 +32,9 @@ flowchart TD
 
 Diagrams are interactive (zoom, pan, click-to-highlight) by default — set `interactive="false"` to disable. The element re-renders when its text content or `theme`/`interactive` attributes change.
 
+Using Python? The [`florajs` package](python/) brings Flora to Jupyter notebooks
+and headless SVG export: `pip install florajs`.
+
 ## Usage
 
 ```javascript

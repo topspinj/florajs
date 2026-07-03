@@ -380,6 +380,9 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
     subgraphs.push({ id, label: id, nodeIds: [...subgraphNodeIds], parentId });
   }
 
+  // The header may be preceded by blank lines (common when the source is a
+  // multiline string in a host language).
+  skipNewlines();
   if (current().type === "keyword" && (current().value === "flowchart" || current().value === "graph")) {
     pos++;
     skipNewlines();
