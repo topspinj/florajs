@@ -148,6 +148,17 @@ render(input, element, {
 });
 ```
 
+## Use with Claude Code
+
+Flora ships an official [Claude Code](https://claude.com/claude-code) plugin: a skill that teaches Claude to write correct Flora syntax, pick sensible shapes and layouts, visualize dbt lineage straight from a `manifest.json`, and hand back a playground share link so you see the rendered diagram immediately.
+
+```
+/plugin marketplace add topspinj/florajs
+/plugin install flora@florajs
+```
+
+Then just describe what you want — "diagram this architecture", "show me the lineage for fct_orders" — and Claude produces an interactive Flora diagram. The skill follows the open [Agent Skills](https://code.claude.com/docs/en/skills) format, so it works with other agents that support it too.
+
 ## Supported Diagram Types
 
 - **Flowcharts** — `flowchart LR`, `flowchart TD`, etc.

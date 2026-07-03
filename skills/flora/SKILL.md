@@ -53,6 +53,7 @@ Nodes are defined inline with their shape syntax. If a node appears multiple tim
 | Rounded | `A(Label)` | Intermediate processes |
 | Diamond | `A{Label}` | Decisions, conditions |
 | Stadium | `A([Label])` | Terminals, start/end |
+| Circle | `A((Label))` | Events, connectors |
 | Cylinder | `A[(Label)]` | Databases, storage |
 | Queue | `A[[Label]]` | Message queues, buffers |
 
@@ -100,6 +101,16 @@ A --> B  %% Inline comments work too
 - IDs are case-sensitive
 - Keep IDs short and descriptive — they're used internally, labels are what users see
 
+### Mermaid features to avoid
+
+Flora is a Mermaid-compatible **subset**, not full Mermaid. Do not emit:
+
+- Styling directives: `classDef`, `class`, `style`, `linkStyle`, `%%{init}%%` — Flora recognizes and deliberately ignores these (styling goes through themes)
+- `click` directives — interactivity goes through `onNodeClick`
+- Other diagram types: `sequenceDiagram`, `classDiagram`, `erDiagram`, `gantt`, etc. Only `flowchart`/`graph` is supported.
+
+Lines Flora can't parse are skipped whole and reported as diagnostics — valid lines still render. Stick to the syntax documented above and the output will be clean.
+
 ## Design Guidelines
 
 When generating diagrams, follow these principles:
@@ -118,6 +129,20 @@ When generating diagrams, follow these principles:
 
 ## Rendering
 
+### Playground share link
+
+Always offer a live link alongside the syntax — it works even if the user has nothing installed. Generate it with the bundled script (pass a file, or `-` to read stdin; theme is optional):
+
+```bash
+node scripts/share-link.mjs diagram.flora tufte
+# or
+echo "$SYNTAX" | node scripts/share-link.mjs -
+```
+
+Run it from this skill's directory. It prints a `https://florajs.dev/playground/#flora:...` URL that opens the diagram in the interactive playground, where the user can view, edit, and re-share it.
+
+### JavaScript
+
 If the user's project has `@topspinj/flora` installed, output runnable code:
 
 ```javascript
@@ -133,9 +158,11 @@ render(`flowchart LR
 
 ```javascript
 render(syntax, element, {
-  theme: "default",        // "default" | "tufte" | "digital"
+  theme: "default",        // "default" | "tufte" | "digital" | "sketch"
   interactive: true,       // zoom, pan, hover, click
+  strict: false,           // true = throw FloraParseError instead of best-effort render
   onNodeClick: (id) => {}, // callback when node is clicked
+  onNodeHover: (id) => {}, // callback when node is hovered
   onHighlight: (id, upstream, downstream) => {}, // lineage callback
 });
 ```
@@ -145,6 +172,25 @@ render(syntax, element, {
 - **default** — Clean, colorful, with gradients and shadows. Good for presentations.
 - **tufte** — Minimal, muted. Good for documentation and technical writing.
 - **digital** — Dark-friendly, high contrast. Good for dashboards and developer tools.
+- **sketch** — Hand-drawn look. Good for informal docs and brainstorming.
+
+### Python / Jupyter
+
+If the user works in Python (the `florajs` package on PyPI), diagrams display interactively in notebooks and export to SVG headlessly:
+
+```python
+from florajs import Diagram
+
+d = Diagram("""
+flowchart TD
+  a[Start] --> b{Decide}
+  b -->|yes| c([Done])
+""", theme="sketch")
+d                          # displays interactively in Jupyter
+d.to_svg_file("out.svg")   # headless SVG export (no browser needed)
+```
+
+There is also a programmatic builder (`from florajs import Flowchart`) with `.node(id, label, shape=...)` and `.edge(src, dst, label)` methods.
 
 ## dbt Manifest Support
 
@@ -152,6 +198,6 @@ When the user provides a dbt `manifest.json` or asks to visualize dbt lineage, r
 
 ## Output Format
 
-Always output the Flora syntax in a fenced code block. If the user just wants the diagram definition (most common), use a plain code block. If they want integration code, use a `javascript` code block with the `render()` call.
+Always output the Flora syntax in a fenced code block, followed by a playground share link so the user can see the rendered diagram immediately. If the user just wants the diagram definition (most common), use a plain code block. If they want integration code, use a `javascript` code block with the `render()` call.
 
 When modifying an existing diagram, show the complete updated syntax — not a diff or partial snippet.

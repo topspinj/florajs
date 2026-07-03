@@ -57,6 +57,7 @@ Every new feature, API change, or new type/interface **must** be documented in t
 - `src/themes/` — Theme definitions (default, tufte, digital, sketch)
 - `src/types.ts` — All shared TypeScript types
 - `python/` — Python package (`florajs` on PyPI): Jupyter display + headless SVG export via an embedded V8 running the vendored IIFE bundle (`npm run build:python` vendors it)
+- `skills/flora/` — the Flora skill for Claude Code, distributed as a plugin (manifests in `.claude-plugin/`). `.claude/skills/flora` is a symlink to it so the skill auto-loads when working in this repo. Keep the skill's syntax/API reference in sync with `src/` changes.
 - `playground.html` — Browser-based playground for testing diagrams (run `npx serve .` and open `/playground.html`)
 
 ## Commands
