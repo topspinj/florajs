@@ -1,10 +1,15 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="site/public/logo-wordmark-dark.png">
-  <img src="site/public/logo-wordmark.png" alt="Flora" width="220">
-</picture>
+<p align="center">
+  <img src="site/public/logo-stacked.png" alt="Flora" width="200">
+</p>
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/@topspinj/flora"><img src="https://img.shields.io/npm/v/@topspinj/flora?color=4f6df5&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@topspinj/flora"><img src="https://img.shields.io/npm/dm/@topspinj/flora?color=4f6df5&label=downloads" alt="npm downloads"></a>
+  <a href="https://pypi.org/project/florajs/"><img src="https://img.shields.io/pypi/v/florajs?color=4f6df5&label=pypi" alt="PyPI version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4f6df5" alt="MIT License"></a>
+</p>
 
-A fault-tolerant, Mermaid-compatible diagram library for AI applications. Interactive SVGs from imperfect input.
+<p align="center">A fault-tolerant, Mermaid-compatible diagram library for AI applications. Interactive SVGs from imperfect input.</p>
 
 LLMs produce broken Mermaid constantly — Mermaid throws a parse error and your UI goes blank. Flora understands the flowchart syntax you already write, renders what it can, and returns structured warnings for the rest. The output is polished and interactive out of the box: better typography, colors, and hover/click/zoom.
 
