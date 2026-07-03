@@ -1,0 +1,152 @@
+<!--
+  Chrome-free diagram renderer for <iframe> embeds (Ghost, Substack, Notion, ...).
+
+  URL format:
+    /embed#flora:<base64url(deflate-raw(JSON{code,theme}))>   (playground Embed button)
+    /embed#<uri-encoded diagram source>                        (hand-written embeds)
+
+  Query params:
+    theme=default|tufte|digital|sketch   overrides the theme encoded in the hash
+    interactive=1                        enables zoom/pan/hover (off by default so
+                                         the iframe never captures page scroll)
+
+  The page posts { type: "flora:height", height } to the parent window whenever
+  the rendered size changes, so embedding pages can auto-size the iframe.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Flora diagram</title>
+  </head>
+  <body>
+    <div id="diagram" role="img" aria-label="Flora diagram"></div>
+    <div id="message" class="message" hidden></div>
+
+    <script>
+      import { render } from "@topspinj/flora";
+
+      const diagram = document.getElementById("diagram") as HTMLElement;
+      const message = document.getElementById("message") as HTMLElement;
+
+      // --- Hash decoding (shares the playground's #flora: codec) ---
+
+      const HASH_PREFIX = "#flora:";
+
+      function base64urlToBytes(text: string): Uint8Array {
+        const binary = atob(text.replace(/-/g, "+").replace(/_/g, "/"));
+        return Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+      }
+
+      async function decodeCompressed(hash: string): Promise<{ code: string; theme?: string } | null> {
+        if (!hash.startsWith(HASH_PREFIX)) return null;
+        try {
+          const bytes = base64urlToBytes(hash.slice(HASH_PREFIX.length));
+          const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+          const json = await new Response(stream).text();
+          const state = JSON.parse(json);
+          if (typeof state.code !== "string") return null;
+          return { code: state.code, theme: typeof state.theme === "string" ? state.theme : undefined };
+        } catch {
+          return null;
+        }
+      }
+
+      function decodePlain(hash: string): string | null {
+        const raw = hash.replace(/^#/, "");
+        if (!raw) return null;
+        try {
+          return decodeURIComponent(raw);
+        } catch {
+          return raw;
+        }
+      }
+
+      // --- Auto-sizing: report rendered height to the parent page ---
+
+      function postHeight() {
+        if (window.parent === window) return;
+        const height = Math.ceil(document.documentElement.scrollHeight);
+        window.parent.postMessage({ type: "flora:height", height }, "*");
+      }
+
+      new ResizeObserver(postHeight).observe(document.body);
+
+      // --- Rendering ---
+
+      function showMessage(text: string) {
+        diagram.hidden = true;
+        message.textContent = text;
+        message.hidden = false;
+      }
+
+      async function renderFromURL() {
+        const params = new URLSearchParams(location.search);
+        const state = await decodeCompressed(location.hash);
+        if (location.hash.startsWith(HASH_PREFIX) && !state) {
+          showMessage("Couldn't decode this diagram link — the URL may have been truncated or altered.");
+          return;
+        }
+        const code = state ? state.code : decodePlain(location.hash);
+        const theme = params.get("theme") ?? state?.theme ?? "default";
+        const interactive = params.get("interactive") === "1" || params.get("interactive") === "true";
+
+        if (!code || !code.trim()) {
+          showMessage("No diagram source in the URL. See florajs.dev/docs/#embedding for the embed URL format.");
+          return;
+        }
+
+        try {
+          diagram.hidden = false;
+          message.hidden = true;
+          diagram.innerHTML = "";
+          render(code, diagram, { theme: theme as any, interactive });
+
+          // The SVG renders at width/height 100%; give the container the
+          // diagram's intrinsic aspect ratio so it scales with the iframe
+          // width and the reported height matches what's visible.
+          const svg = diagram.querySelector("svg");
+          const vb = svg?.getAttribute("viewBox")?.split(" ").map(Number);
+          if (vb && vb[2] > 0 && vb[3] > 0) {
+            diagram.style.aspectRatio = `${vb[2]} / ${vb[3]}`;
+            diagram.style.maxWidth = `${vb[2]}px`;
+          }
+        } catch (err) {
+          showMessage(err instanceof Error ? err.message : String(err));
+        }
+        postHeight();
+      }
+
+      window.addEventListener("hashchange", renderFromURL);
+      renderFromURL();
+    </script>
+
+    <style is:global>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: white;
+      }
+
+      #diagram {
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .message {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #991b1b;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin: 12px;
+      }
+    </style>
+  </body>
+</html>
