@@ -157,7 +157,25 @@ Flora ships an official [Claude Code](https://claude.com/claude-code) plugin: a 
 /plugin install flora@florajs
 ```
 
-Then just describe what you want — "diagram this architecture", "show me the lineage for fct_orders" — and Claude produces an interactive Flora diagram. The skill follows the open [Agent Skills](https://code.claude.com/docs/en/skills) format, so it works with other agents that support it too.
+Then invoke the skill directly with `/flora`:
+
+```
+/flora draw the auth flow for my app — user logs in, we check credentials, if valid issue a JWT, if not show error, then redirect to dashboard
+```
+
+Claude produces the diagram and a live link:
+
+```
+flowchart TD
+  login([User logs in]) --> check{Credentials valid?}
+  check -->|valid| jwt[Issue JWT]
+  check -->|invalid| err[Show error]
+  jwt --> dash([Redirect to dashboard])
+```
+
+[Open in playground →](https://florajs.dev/playground/#flora:VY6xDsIwEEN_5ZSJSvQHGGCABUYoYggdQnIlgZBIlysd2v47JGJhs-xn2aPQ0aBYic7HQVtFDM3uGgB8vLuwkOeElHUCF9oK6noN2qJ-jltCg4Gd8gneyjuzmXOthBmbijnBY2C5T6lHOFya9h9x4QchkTzZOGQRqVDfXlkzKtmFPKJxhJqBY3FuUZFpK7EUbPGV_xvsVO9ZzB8)
+
+The skill follows the open [Agent Skills](https://code.claude.com/docs/en/skills) format, so it works with other agents that support it too.
 
 ## Supported Diagram Types
 
