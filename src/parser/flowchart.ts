@@ -21,6 +21,10 @@ function inferShape(tokens: Token[], start: number): { shape: NodeShape; label: 
     const textToken = tokens[start + 1];
     return { shape: "rounded", label: textToken?.value ?? "" };
   }
+  if (token.type === "open_circle") {
+    const textToken = tokens[start + 1];
+    return { shape: "circle", label: textToken?.value ?? "" };
+  }
   if (token.type === "open_brace") {
     const textToken = tokens[start + 1];
     return { shape: "diamond", label: textToken?.value ?? "" };
@@ -119,6 +123,7 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
         if (
           tokens[pos]!.type === "close_bracket" ||
           tokens[pos]!.type === "close_paren" ||
+          tokens[pos]!.type === "close_circle" ||
           tokens[pos]!.type === "close_brace" ||
           tokens[pos]!.type === "close_stadium" ||
           tokens[pos]!.type === "close_cylinder" ||

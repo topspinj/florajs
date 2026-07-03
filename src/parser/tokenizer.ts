@@ -11,6 +11,8 @@ export type TokenType =
   | "close_bracket"
   | "open_paren"
   | "close_paren"
+  | "open_circle"
+  | "close_circle"
   | "open_brace"
   | "close_brace"
   | "open_diamond"
@@ -258,7 +260,14 @@ export function tokenize(input: string): TokenizeResult {
 
     if (ch === "(") {
       advance();
-      if (peek() === "[") {
+      if (peek() === "(") {
+        advance();
+        const text = readBracketedText(")");
+        if (peek() === ")") advance();
+        tokens.push({ type: "open_circle", value: "((", line: startLine, col: startCol });
+        tokens.push({ type: "text", value: text, line: startLine, col: startCol + 2 });
+        tokens.push({ type: "close_circle", value: "))", line: startLine, col: col });
+      } else if (peek() === "[") {
         advance();
         const text = readBracketedText("]");
         if (peek() === ")") advance();

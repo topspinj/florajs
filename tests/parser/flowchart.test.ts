@@ -51,6 +51,26 @@ describe("flowchart parser", () => {
     expect(node!.label).toBe("Stadium");
   });
 
+  it("parses circle shapes", () => {
+    const { ast, warnings } = parse(`flowchart TD
+      A((Start))`);
+
+    const node = ast.nodes.find((n) => n.id === "A");
+    expect(node!.shape).toBe("circle");
+    expect(node!.label).toBe("Start");
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("parses circle shapes in chains", () => {
+    const { ast } = parse(`flowchart TD
+      A((Start)) --> B[Process] --> C((End))`);
+
+    expect(ast.nodes).toHaveLength(3);
+    expect(ast.nodes.find((n) => n.id === "A")!.shape).toBe("circle");
+    expect(ast.nodes.find((n) => n.id === "C")!.shape).toBe("circle");
+    expect(ast.edges).toHaveLength(2);
+  });
+
   it("parses cylinder shapes", () => {
     const { ast } = parse(`flowchart TD
       A[(Database)]`);
