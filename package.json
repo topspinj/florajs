@@ -1,7 +1,7 @@
 {
   "name": "@topspinj/flora",
   "version": "0.1.0",
-  "description": "Beautiful, interactive diagrams from Mermaid-compatible syntax",
+  "description": "Fault-tolerant, Mermaid-compatible diagram library for AI applications — interactive SVGs from imperfect input",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",

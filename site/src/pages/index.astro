@@ -40,40 +40,28 @@ const heroDefault = `flowchart LR
     </div>
   </section>
 
-  <!-- Problem / Comparison -->
+  <!-- Problem / Graceful degradation -->
   <section class="problem">
     <div class="container">
       <h2>Built for AI-generated syntax</h2>
       <p class="section-sub">
-        LLMs produce broken Mermaid constantly. Mermaid throws an error and your UI goes blank.
-        Flora renders what it can and tells you what went wrong.
+        LLM output is imperfect &mdash; unclosed brackets, dangling arrows, truncated lines.
+        Flora renders what it can and tells you exactly what it skipped. This demo is live:
+        the diagram and warnings below come straight from Flora's parser.
       </p>
-      <div class="comparison">
-        <div class="comp-panel comp-mermaid">
-          <div class="comp-label"><span class="dot dot-red"></span>Mermaid</div>
-          <pre><code><span class="t-kw">await</span> mermaid.<span class="t-fn">render</span>(<span class="t-str">"id"</span>, <span class="t-str">`
-  flowchart LR
-    A[Start] --&gt; B&#123;Decision&#125;
-    B --&gt;|Yes| C[Do thing
-    B --&gt;
-    D[End]
-`</span>);
-
-<span class="t-cmt">// Parse error on line 4</span>
-<span class="t-cmt">// Nothing renders. App crashes.</span></code></pre>
+      <div class="degrade-showcase">
+        <div class="showcase-code degrade-code">
+          <div class="panel-label panel-label-dark">Imperfect input</div>
+          <pre><code>flowchart LR
+  A[Start] --&gt; B&#123;Decision&#125;
+  <span class="broken-line">B --&gt;|Yes| C[Do thing</span>
+  <span class="broken-line">B --&gt;</span>
+  D[End]</code></pre>
         </div>
-        <div class="comp-panel comp-flora">
-          <div class="comp-label"><span class="dot dot-green"></span>Flora</div>
-          <pre><code><span class="t-kw">const</span> &#123; warnings &#125; = <span class="t-fn">render</span>(<span class="t-str">`
-  flowchart LR
-    A[Start] --&gt; B&#123;Decision&#125;
-    B --&gt;|Yes| C[Do thing
-    B --&gt;
-    D[End]
-`</span>, element);
-
-<span class="t-cmt">// Renders A, B, D &mdash; skips broken lines</span>
-<span class="t-cmt">// warnings: [&#123; line: 4, ... &#125;, ...]</span></code></pre>
+        <div class="showcase-diagram degrade-output">
+          <div class="panel-label panel-label-light">Output</div>
+          <div class="diagram-frame" id="degrade-diagram"></div>
+          <ul class="degrade-warnings" id="degrade-warnings"></ul>
         </div>
       </div>
     </div>
@@ -249,6 +237,24 @@ const heroDefault = `flowchart LR
     heroTimeout = setTimeout(renderHero, 300);
   });
   renderHero();
+
+  // Graceful-degradation demo — the input, output, and warnings are all real
+  const degradeDiagram = document.getElementById("degrade-diagram")!;
+  const degradeWarnings = document.getElementById("degrade-warnings")!;
+  const { warnings } = render(
+    `flowchart LR
+  A[Start] --> B{Decision}
+  B -->|Yes| C[Do thing
+  B -->
+  D[End]`,
+    degradeDiagram,
+    { interactive: true }
+  );
+  for (const w of warnings) {
+    const li = document.createElement("li");
+    li.textContent = `⚠ line ${w.line}: ${w.message}`;
+    degradeWarnings.appendChild(li);
+  }
 
   // Lineage demo
   const lineageDiagram = document.getElementById("lineage-diagram")!;
@@ -516,46 +522,52 @@ const heroDefault = `flowchart LR
     );
   }
 
-  .comparison {
+  .degrade-showcase {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: 2fr 3fr;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.03),
+      0 8px 24px rgba(0, 0, 0, 0.06),
+      0 24px 48px -12px rgba(0, 0, 0, 0.08);
   }
 
-  .comp-panel {
-    min-width: 0;
-  }
-
-  .comp-panel pre {
-    height: 100%;
+  .degrade-code pre {
+    flex: 1;
     margin: 0;
+    border-radius: 0;
+    padding: 20px 24px;
+    font-size: 14px;
+    line-height: 1.6;
   }
 
-  .comp-mermaid pre {
-    opacity: 0.88;
+  .broken-line {
+    background: rgba(239, 68, 68, 0.12);
+    border-radius: 3px;
+    box-decoration-break: clone;
   }
 
-  .comp-label {
+  .degrade-output {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 10px;
+    flex-direction: column;
   }
 
-  .dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+  .degrade-output .diagram-frame {
+    flex: 1;
   }
 
-  .dot-red { background: #ef4444; }
-  .dot-green { background: #22c55e; }
+  .degrade-warnings {
+    list-style: none;
+    margin: 0;
+    padding: 12px 24px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #92600a;
+  }
 
   /* ── Features ── */
 
@@ -885,7 +897,7 @@ const heroDefault = `flowchart LR
       border-top: 1px solid rgba(0, 0, 0, 0.06);
     }
 
-    .comparison,
+    .degrade-showcase,
     .feature-grid,
     .api-grid {
       grid-template-columns: 1fr;

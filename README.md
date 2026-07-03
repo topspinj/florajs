@@ -9,9 +9,9 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4f6df5" alt="MIT License"></a>
 </p>
 
-<p align="center">Beautiful, interactive diagrams from Mermaid-compatible syntax.</p>
+<p align="center">A fault-tolerant, Mermaid-compatible diagram library for AI applications. Interactive SVGs from imperfect input.</p>
 
-Flora takes the text-to-diagram syntax you already know from Mermaid and produces polished, interactive SVGs with better typography, colors, and hover/click/zoom out of the box.
+LLMs produce broken Mermaid constantly — Mermaid throws a parse error and your UI goes blank. Flora understands the flowchart syntax you already write, renders what it can, and returns structured warnings for the rest. The output is polished and interactive out of the box: better typography, colors, and hover/click/zoom.
 
 ## Try it
 
