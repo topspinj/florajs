@@ -460,7 +460,7 @@ flowchart LR
 
       <section id="edges">
         <h2>Edges</h2>
-        <p>Edges come in three stroke styles, each in directed and open (undirected) form:</p>
+        <p>Edges come in three stroke styles, each in directed, open (undirected), and bidirectional form:</p>
 
         <div class="shape-table">
           <table>
@@ -469,6 +469,7 @@ flowchart LR
                 <th>Style</th>
                 <th>Directed</th>
                 <th>Open (no arrow)</th>
+                <th>Bidirectional</th>
               </tr>
             </thead>
             <tbody>
@@ -476,23 +477,27 @@ flowchart LR
                 <td>Solid</td>
                 <td><code>A --&gt; B</code></td>
                 <td><code>A --- B</code></td>
+                <td><code>A &lt;--&gt; B</code></td>
               </tr>
               <tr>
                 <td>Dotted</td>
                 <td><code>A -.-&gt; B</code></td>
                 <td><code>A -.- B</code></td>
+                <td><code>A &lt;-.-&gt; B</code></td>
               </tr>
               <tr>
                 <td>Thick</td>
                 <td><code>A ==&gt; B</code></td>
                 <td><code>A === B</code></td>
+                <td><code>A &lt;==&gt; B</code></td>
               </tr>
             </tbody>
           </table>
         </div>
         <p>
           Open links render with no arrowhead — useful in architecture diagrams where the relationship
-          isn't directional. Click-to-highlight traverses them in both directions.
+          isn't directional. Bidirectional arrows show two-way communication. Click-to-highlight
+          traverses both kinds in both directions.
         </p>
 
         <h3>Edge Labels</h3>
@@ -803,7 +808,7 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>DiagramType</code></td><td><code>"flowchart" | "erd" | "unsupported"</code></td></tr>
               <tr><td><code>FlowchartDirection</code></td><td><code>"TB" | "TD" | "BT" | "LR" | "RL"</code></td></tr>
               <tr><td><code>NodeShape</code></td><td><code>"rect" | "rounded" | "diamond" | "circle" | "stadium" | "cylinder" | "queue"</code></td></tr>
-              <tr><td><code>EdgeArrowType</code></td><td><code>"arrow" | "open"</code> &mdash; directed (default) or undirected</td></tr>
+              <tr><td><code>EdgeArrowType</code></td><td><code>"arrow" | "open" | "bidirectional"</code> &mdash; arrowhead placement on edges</td></tr>
               <tr><td><code>ThemePreset</code></td><td><code>"default" | "tufte" | "digital" | "sketch"</code></td></tr>
             </tbody>
           </table>
@@ -852,7 +857,7 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>to</code></td><td><code>string</code></td><td>Target node ID</td></tr>
               <tr><td><code>label</code></td><td><code>string?</code></td><td>Optional edge label</td></tr>
               <tr><td><code>style</code></td><td><code>"solid" | "dotted" | "thick"</code></td><td>Edge line style</td></tr>
-              <tr><td><code>arrowType</code></td><td><code>EdgeArrowType?</code></td><td>Arrowhead placement &mdash; <code>"arrow"</code> (default) or <code>"open"</code></td></tr>
+              <tr><td><code>arrowType</code></td><td><code>EdgeArrowType?</code></td><td>Arrowhead placement &mdash; <code>"arrow"</code> (default), <code>"open"</code>, or <code>"bidirectional"</code></td></tr>
             </tbody>
           </table>
         </div>
@@ -923,7 +928,7 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>to</code></td><td><code>string</code></td><td>Target node ID</td></tr>
               <tr><td><code>label</code></td><td><code>string?</code></td><td>Optional edge label</td></tr>
               <tr><td><code>style</code></td><td><code>"solid" | "dotted" | "thick"</code></td><td>Edge line style</td></tr>
-              <tr><td><code>arrowType</code></td><td><code>EdgeArrowType?</code></td><td>Arrowhead placement &mdash; <code>"arrow"</code> (default) or <code>"open"</code></td></tr>
+              <tr><td><code>arrowType</code></td><td><code>EdgeArrowType?</code></td><td>Arrowhead placement &mdash; <code>"arrow"</code> (default), <code>"open"</code>, or <code>"bidirectional"</code></td></tr>
               <tr><td><code>points</code></td><td><code>Array&lt;&#123; x: number; y: number &#125;&gt;</code></td><td>Routed edge waypoints</td></tr>
             </tbody>
           </table>

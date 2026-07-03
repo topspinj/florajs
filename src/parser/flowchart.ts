@@ -54,10 +54,11 @@ function isEdgeToken(token: Token): boolean {
   return token.type === "arrow" || token.type === "link";
 }
 
-// "--", "==", "-." — the start of an inline edge label, as in "A -- text --> B"
-// or "A -- text --- B". The closing arrow/link determines the edge kind.
+// "--", "==", "-.", "<--" — the start of an inline edge label, as in
+// "A -- text --> B", "A -- text --- B" or "A <-- text --> B". The closing
+// arrow/link determines the edge kind.
 function isLabelOpener(token: Token): boolean {
-  return token.type === "identifier" && /^[-=.]{2}$/.test(token.value);
+  return token.type === "identifier" && /^<?[-=.]{2}$/.test(token.value);
 }
 
 export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): FlowchartAST {
@@ -191,7 +192,9 @@ export function parseFlowchart(tokens: Token[], warnings: ParseWarning[] = []): 
 
         const style = arrowStyle(arrow);
         const arrowType: FlowchartEdge["arrowType"] =
-          current().type === "link" ? "open" : "arrow";
+          current().type === "link" ? "open"
+            : arrow.startsWith("<") ? "bidirectional"
+            : "arrow";
         pos++;
 
         if (current().type === "pipe_text") {

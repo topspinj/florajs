@@ -196,25 +196,27 @@ function renderDefs(svg: SVGSVGElement, theme: FloraTheme, nodes: LayoutNode[], 
     defs.appendChild(filter);
   }
 
-  const marker = el("marker", {
-    id: `flora-arrowhead-${id}`,
-    markerWidth: "12",
-    markerHeight: "8",
-    refX: "11",
-    refY: "4",
-    orient: "auto",
-    markerUnits: "userSpaceOnUse",
-  });
-  const arrowPath = el("path", {
-    d: "M 1 1 L 10 4 L 1 7",
-    fill: "none",
-    stroke: theme.edgeColors.stroke,
-    "stroke-width": "1.5",
-    "stroke-linecap": "round",
-    "stroke-linejoin": "round",
-  });
-  marker.appendChild(arrowPath);
-  defs.appendChild(marker);
+  for (const [suffix, orient] of [["", "auto"], ["-start", "auto-start-reverse"]] as const) {
+    const marker = el("marker", {
+      id: `flora-arrowhead${suffix}-${id}`,
+      markerWidth: "12",
+      markerHeight: "8",
+      refX: "11",
+      refY: "4",
+      orient,
+      markerUnits: "userSpaceOnUse",
+    });
+    const arrowPath = el("path", {
+      d: "M 1 1 L 10 4 L 1 7",
+      fill: "none",
+      stroke: theme.edgeColors.stroke,
+      "stroke-width": "1.5",
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+    });
+    marker.appendChild(arrowPath);
+    defs.appendChild(marker);
+  }
 
   svg.appendChild(defs);
 }
@@ -584,18 +586,16 @@ function renderEdgeSketch(edge: LayoutEdge, theme: FloraTheme): SVGGElement {
 
   group.appendChild(path);
 
-  if (edge.arrowType !== "open") {
-    // Sketchy arrowhead
-    const last = edge.points[edge.points.length - 1]!;
-    const prev = edge.points[edge.points.length - 2] || edge.points[0]!;
-    const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
+  // Sketchy arrowhead(s)
+  function drawArrowhead(tip: { x: number; y: number }, toward: { x: number; y: number }): void {
+    const angle = Math.atan2(tip.y - toward.y, tip.x - toward.x);
     const aLen = 10, spread = Math.PI / 6;
-    const a1x = last.x - aLen * Math.cos(angle - spread) + rng.offset(0.6);
-    const a1y = last.y - aLen * Math.sin(angle - spread) + rng.offset(0.6);
-    const a2x = last.x - aLen * Math.cos(angle + spread) + rng.offset(0.6);
-    const a2y = last.y - aLen * Math.sin(angle + spread) + rng.offset(0.6);
+    const a1x = tip.x - aLen * Math.cos(angle - spread) + rng.offset(0.6);
+    const a1y = tip.y - aLen * Math.sin(angle - spread) + rng.offset(0.6);
+    const a2x = tip.x - aLen * Math.cos(angle + spread) + rng.offset(0.6);
+    const a2y = tip.y - aLen * Math.sin(angle + spread) + rng.offset(0.6);
     const arrow = el("path", {
-      d: `M ${a1x.toFixed(2)} ${a1y.toFixed(2)} L ${last.x.toFixed(2)} ${last.y.toFixed(2)} L ${a2x.toFixed(2)} ${a2y.toFixed(2)}`,
+      d: `M ${a1x.toFixed(2)} ${a1y.toFixed(2)} L ${tip.x.toFixed(2)} ${tip.y.toFixed(2)} L ${a2x.toFixed(2)} ${a2y.toFixed(2)}`,
       fill: "none",
       stroke: theme.edgeColors.stroke,
       "stroke-width": "1.5",
@@ -603,6 +603,17 @@ function renderEdgeSketch(edge: LayoutEdge, theme: FloraTheme): SVGGElement {
       "stroke-linejoin": "round",
     });
     group.appendChild(arrow);
+  }
+
+  if (edge.arrowType !== "open") {
+    const last = edge.points[edge.points.length - 1]!;
+    const prev = edge.points[edge.points.length - 2] || edge.points[0]!;
+    drawArrowhead(last, prev);
+  }
+  if (edge.arrowType === "bidirectional") {
+    const first = edge.points[0]!;
+    const second = edge.points[1] || edge.points[edge.points.length - 1]!;
+    drawArrowhead(first, second);
   }
 
   if (edge.label) {
@@ -648,6 +659,9 @@ function renderEdge(edge: LayoutEdge, theme: FloraTheme, id: string): SVGGElemen
 
   if (edge.arrowType !== "open") {
     path.setAttribute("marker-end", `url(#flora-arrowhead-${id})`);
+  }
+  if (edge.arrowType === "bidirectional") {
+    path.setAttribute("marker-start", `url(#flora-arrowhead-start-${id})`);
   }
 
   if (edge.style === "dotted") {

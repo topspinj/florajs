@@ -57,6 +57,12 @@ describe("renderSVGString", () => {
     expect(svg).toContain("marker-end");
   });
 
+  it("adds arrowheads at both ends of bidirectional edges", () => {
+    const svg = renderFromSource("flowchart LR\n  A <--> B");
+    expect(svg).toContain("marker-end");
+    expect(svg).toContain("marker-start");
+  });
+
   it("applies digital (dark) theme", () => {
     const svg = renderFromSource("flowchart TD\n  A --> B", "digital");
     expect(svg).toContain("#0F172A"); // digital theme background

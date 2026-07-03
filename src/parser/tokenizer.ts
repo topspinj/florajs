@@ -199,8 +199,12 @@ export function tokenize(input: string): TokenizeResult {
       continue;
     }
 
-    if (ch === "-" || ch === "=" || ch === ".") {
+    if (
+      ch === "-" || ch === "=" || ch === "." ||
+      (ch === "<" && /[-=.]/.test(input[pos + 1] ?? ""))
+    ) {
       let arrow = "";
+      if (ch === "<") arrow += advance();
       while (pos < input.length && /[-=.>]/.test(input[pos]!)) {
         arrow += advance();
       }
@@ -208,11 +212,12 @@ export function tokenize(input: string): TokenizeResult {
         tokens.push({ type: "arrow", value: arrow, line: startLine, col: startCol });
         continue;
       }
-      if (arrow.length >= 3) {
+      if (!arrow.startsWith("<") && arrow.length >= 3) {
         // "---", "-.-", "===" — an open (undirected) link
         tokens.push({ type: "link", value: arrow, line: startLine, col: startCol });
         continue;
       }
+      // "--", "-." (label openers) or "<--" (bidirectional label opener)
       tokens.push({ type: "identifier", value: arrow, line: startLine, col: startCol });
       continue;
     }

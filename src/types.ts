@@ -11,10 +11,11 @@ export interface FlowchartNode {
 }
 
 /**
- * "arrow" — directed edge with an arrowhead at the target (default).
- * "open"  — undirected edge with no arrowheads.
+ * "arrow"         — directed edge with an arrowhead at the target (default).
+ * "open"          — undirected edge with no arrowheads.
+ * "bidirectional" — arrowheads at both ends.
  */
-export type EdgeArrowType = "arrow" | "open";
+export type EdgeArrowType = "arrow" | "open" | "bidirectional";
 
 export interface FlowchartEdge {
   from: string;

@@ -167,6 +167,53 @@ describe("flowchart parser", () => {
     expect(warnings.some((w) => w.severity === "error" && w.message.includes("label"))).toBe(true);
   });
 
+  it("parses bidirectional arrows", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      Client <--> Server`);
+
+    expect(ast.edges).toHaveLength(1);
+    expect(ast.edges[0]!.arrowType).toBe("bidirectional");
+    expect(ast.edges[0]!.style).toBe("solid");
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("parses dotted and thick bidirectional arrows", () => {
+    const { ast } = parse(`flowchart LR
+      A <-.-> B
+      C <==> D`);
+
+    expect(ast.edges[0]!.arrowType).toBe("bidirectional");
+    expect(ast.edges[0]!.style).toBe("dotted");
+    expect(ast.edges[1]!.arrowType).toBe("bidirectional");
+    expect(ast.edges[1]!.style).toBe("thick");
+  });
+
+  it("parses bidirectional arrows with pipe labels", () => {
+    const { ast } = parse(`flowchart LR
+      A <-->|syncs| B`);
+
+    expect(ast.edges[0]!.arrowType).toBe("bidirectional");
+    expect(ast.edges[0]!.label).toBe("syncs");
+  });
+
+  it("parses bidirectional arrows with inline labels (<-- text -->)", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      A <-- syncs --> B`);
+
+    expect(ast.edges).toHaveLength(1);
+    expect(ast.edges[0]!.arrowType).toBe("bidirectional");
+    expect(ast.edges[0]!.label).toBe("syncs");
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("parses bidirectional arrows without spaces", () => {
+    const { ast } = parse(`flowchart LR
+      A<-->B`);
+
+    expect(ast.edges).toHaveLength(1);
+    expect(ast.edges[0]!.arrowType).toBe("bidirectional");
+  });
+
   it("directed edges default to arrow type", () => {
     const { ast } = parse(`flowchart LR
       A --> B`);
