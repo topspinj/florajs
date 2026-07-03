@@ -20,5 +20,8 @@ if (!file) {
 }
 
 const code = readFileSync(file === "-" ? 0 : file, "utf8").trim();
+// Echo the input back so callers can spot mangled syntax (e.g. shell-eaten
+// arrows) before sharing the link.
+console.error(`Encoding ${code.split("\n").length} lines:\n${code}\n`);
 const compressed = deflateRawSync(Buffer.from(JSON.stringify({ code, theme })));
 console.log(`https://florajs.dev/playground/#flora:${compressed.toString("base64url")}`);

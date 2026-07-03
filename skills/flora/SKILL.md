@@ -144,15 +144,13 @@ When generating diagrams, follow these principles:
 
 ### Playground share link
 
-Always offer a live link alongside the syntax — it works even if the user has nothing installed. Generate it with the bundled script (pass a file, or `-` to read stdin; theme is optional):
+Always offer a live link alongside the syntax — it works even if the user has nothing installed. Write the diagram to a temp file with a file-writing tool, then pass the path to the bundled script (theme is optional):
 
 ```bash
-node scripts/share-link.mjs diagram.flora tufte
-# or
-echo "$SYNTAX" | node scripts/share-link.mjs -
+node scripts/share-link.mjs /tmp/diagram.flora tufte
 ```
 
-Run it from this skill's directory. It prints a `https://florajs.dev/playground/#flora:...` URL that opens the diagram in the interactive playground, where the user can view, edit, and re-share it.
+Run it from this skill's directory. Don't pipe the syntax in via `echo` — arrows like `-->|label|` are full of shell redirection characters, and a quoting slip corrupts the encoded diagram silently while the displayed one stays correct. The script prints the diagram it encoded to stderr; check it matches what you showed the user. The URL (`https://florajs.dev/playground/#flora:...`) opens the diagram in the interactive playground, where the user can view, edit, and re-share it.
 
 ### JavaScript
 
