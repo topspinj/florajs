@@ -54,7 +54,7 @@ Every new feature, API change, or new type/interface **must** be documented in t
 - `src/parser/` — Tokenizer and flowchart parser (Mermaid-compatible syntax)
 - `src/layout/` — Graph layout using dagre
 - `src/renderer/` — SVG rendering with interactivity (zoom, pan, hover, click)
-- `src/themes/` — Theme definitions (default, tufte, digital)
+- `src/themes/` — Theme definitions (default, tufte, digital, sketch)
 - `src/types.ts` — All shared TypeScript types
 - `playground.html` — Browser-based playground for testing diagrams (run `npx serve .` and open `/playground.html`)
 
