@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "florajs"
 version = "0.1.0"
-description = "Beautiful, interactive diagrams from Mermaid-compatible syntax — Python interface to the Flora JS library"
+description = "Fault-tolerant, Mermaid-compatible diagrams for AI applications — Python interface to the Flora JS library"
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "topspinj" }]
