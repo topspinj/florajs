@@ -1,7 +1,8 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://florajs.dev/logo-wordmark-dark.png">
-  <img src="https://florajs.dev/logo-wordmark.png" alt="Flora" width="380">
+  <source media="(prefers-color-scheme: dark)" srcset="site/public/logo-wordmark-dark.png">
+  <img src="site/public/logo-wordmark.png" alt="Flora" width="220">
 </picture>
+
 
 Beautiful, interactive diagrams from Mermaid-compatible syntax.
 
