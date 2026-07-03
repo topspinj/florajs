@@ -1,5 +1,4 @@
 import { render } from "./index.js";
-import { themes } from "./themes/index.js";
 import type { FloraOptions, ThemePreset } from "./types.js";
 
 /**
@@ -10,8 +9,12 @@ import type { FloraOptions, ThemePreset } from "./types.js";
  * element can re-render when it changes.
  *
  * Attributes:
- * - `theme` — theme preset name ("default", "tufte", "digital", "sketch")
+ * - `theme` — theme preset name ("default", "tufte", "digital", "sketch"); unknown names fall back to default
  * - `interactive` — zoom/pan/hover/click, on by default like the core API; set `interactive="false"` to disable
+ *
+ * Events:
+ * - `flora-warnings` — dispatched after a render that produced parse warnings,
+ *   with `detail.warnings` set to the `ParseWarning[]` from the core API
  */
 export class FloraDiagramElement extends HTMLElement {
   static observedAttributes = ["theme", "interactive"];
@@ -51,20 +54,29 @@ export class FloraDiagramElement extends HTMLElement {
       return;
     }
 
-    const themeAttr = this.getAttribute("theme");
     const options: FloraOptions = {
-      theme: themeAttr && themeAttr in themes ? (themeAttr as ThemePreset) : undefined,
+      // resolveTheme falls back to the default theme for unknown names
+      theme: (this.getAttribute("theme") ?? undefined) as ThemePreset | undefined,
       interactive: this.getAttribute("interactive") !== "false",
     };
 
-    render(source, this.#container, options);
+    const { warnings } = render(source, this.#container, options);
+    if (warnings.length > 0) {
+      this.dispatchEvent(
+        new CustomEvent("flora-warnings", { detail: { warnings }, bubbles: true, composed: true }),
+      );
+    }
   }
 }
 
+let elementClassUsed = false;
+
 export function registerFloraDiagram(tagName = "flora-diagram"): void {
-  if (typeof customElements !== "undefined" && !customElements.get(tagName)) {
-    customElements.define(tagName, FloraDiagramElement);
-  }
+  if (typeof customElements === "undefined" || customElements.get(tagName)) return;
+  // A constructor can back only one definition per registry, so tag names
+  // beyond the first get their own subclass.
+  customElements.define(tagName, elementClassUsed ? class extends FloraDiagramElement {} : FloraDiagramElement);
+  elementClassUsed = true;
 }
 
 registerFloraDiagram();

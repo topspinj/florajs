@@ -95,4 +95,47 @@ describe("<flora-diagram> web component", () => {
     const svg = el.shadowRoot!.querySelector("svg");
     expect(svg!.innerHTML).not.toContain("Detached");
   });
+
+  it("registers under a custom tag name without throwing", () => {
+    expect(() => registerFloraDiagram("flora-diagram-alt")).not.toThrow();
+    expect(customElements.get("flora-diagram-alt")).toBeDefined();
+
+    const el = document.createElement("flora-diagram-alt");
+    el.textContent = SIMPLE_SOURCE;
+    document.body.appendChild(el);
+    expect(el).toBeInstanceOf(FloraDiagramElement);
+    expect(el.shadowRoot!.querySelector("svg")).not.toBeNull();
+  });
+
+  it("falls back to the default theme for prototype keys like theme=\"constructor\"", () => {
+    const el = document.createElement("flora-diagram") as FloraDiagramElement;
+    el.setAttribute("theme", "constructor");
+    el.textContent = SIMPLE_SOURCE;
+    expect(() => document.body.appendChild(el)).not.toThrow();
+    expect(el.shadowRoot!.querySelector("svg")).not.toBeNull();
+  });
+
+  it("dispatches flora-warnings when the source produces parse warnings", () => {
+    const received: unknown[] = [];
+    document.body.addEventListener("flora-warnings", (e) => {
+      received.push((e as CustomEvent).detail.warnings);
+    });
+    const el = document.createElement("flora-diagram") as FloraDiagramElement;
+    el.textContent = "flowchart TD\n  subgraph S\n  A --> B"; // unterminated subgraph
+    document.body.appendChild(el);
+
+    expect(received).toHaveLength(1);
+    const warnings = received[0] as { line: number; col: number; message: string }[];
+    expect(warnings.length).toBeGreaterThan(0);
+    expect(warnings.some((w) => w.message.includes("Unterminated subgraph"))).toBe(true);
+  });
+
+  it("does not dispatch flora-warnings for a clean source", () => {
+    let fired = false;
+    document.body.addEventListener("flora-warnings", () => {
+      fired = true;
+    });
+    createDiagram();
+    expect(fired).toBe(false);
+  });
 });

@@ -357,6 +357,17 @@ flowchart TD
           </table>
         </div>
 
+        <h3>Events</h3>
+        <p>
+          When a render produces parse warnings (skipped lines, unterminated blocks), the element
+          dispatches a bubbling, composed <code>flora-warnings</code> event with
+          <code>detail.warnings</code> set to the same <code>ParseWarning[]</code> the core API
+          returns — the CDN equivalent of the React component's <code>onWarnings</code> prop:
+        </p>
+        <pre><code>document.<span class="t-fn">addEventListener</span>(<span class="t-str">"flora-warnings"</span>, (e) =&gt; &#123;
+  console.<span class="t-fn">warn</span>(e.detail.warnings); <span class="t-cm">// [&#123; line, col, message &#125;, ...]</span>
+&#125;);</code></pre>
+
         <h3><code>window.Flora</code></h3>
         <p>
           Every export from the core package is available on the global, so you can also drive
@@ -684,6 +695,11 @@ console.<span class="t-fn">log</span>(ast.edges);
         </div>
         <pre><code><span class="t-fn">render</span>(input, el, &#123; theme: <span class="t-str">"tufte"</span> &#125;);
 <span class="t-fn">render</span>(input, el, &#123; theme: <span class="t-str">"digital"</span> &#125;);</code></pre>
+        <p>
+          Unknown preset names fall back to the <code>default</code> theme everywhere a theme name is
+          accepted — <code>render()</code>, <code>resolveTheme()</code>, the React component, the
+          rehype plugin, and the <code>&lt;flora-diagram&gt;</code> element.
+        </p>
       </section>
 
       <section id="custom-themes">
