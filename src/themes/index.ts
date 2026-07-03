@@ -13,7 +13,11 @@ export const themes: Record<ThemePreset, FloraTheme> = {
 
 export function resolveTheme(theme?: ThemePreset | Partial<FloraTheme>): FloraTheme {
   if (!theme) return defaultTheme;
-  if (typeof theme === "string") return themes[theme];
+  if (typeof theme === "string") {
+    // Unknown preset names fall back to the default theme. hasOwnProperty
+    // (not `in`) so prototype keys like "constructor" don't slip through.
+    return Object.prototype.hasOwnProperty.call(themes, theme) ? themes[theme] : defaultTheme;
+  }
   const base = defaultTheme;
   return {
     ...base,

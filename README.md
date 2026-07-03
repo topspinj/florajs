@@ -18,6 +18,20 @@ Open the [playground](https://florajs.dev/playground/) — write a diagram, watc
 npm install @topspinj/flora
 ```
 
+Or drop it into any HTML page with no build step — the CDN bundle exposes `window.Flora` and registers a `<flora-diagram>` custom element:
+
+```html
+<script src="https://unpkg.com/@topspinj/flora"></script>
+
+<flora-diagram theme="default">
+flowchart TD
+  A[Dashboard] --> B[API]
+  B --> C[(Database)]
+</flora-diagram>
+```
+
+Diagrams are interactive (zoom, pan, click-to-highlight) by default — set `interactive="false"` to disable. The element re-renders when its text content or `theme`/`interactive` attributes change.
+
 Using Python? The [`florajs` package](python/) brings Flora to Jupyter notebooks
 and headless SVG export: `pip install florajs`.
 
