@@ -572,16 +572,24 @@ flowchart TD
 
         <h3>Usage</h3>
         <p>
-          Just describe what you want — no special commands needed. The skill triggers on requests
-          like:
+          Just describe what you want — no special commands needed. For example:
         </p>
-        <ul>
-          <li>"Diagram this architecture"</li>
-          <li>"Map out the auth flow in this codebase"</li>
-          <li>"Visualize the lineage in my dbt project"</li>
-          <li>"Show me everything downstream of stg_orders"</li>
-        </ul>
+        <blockquote>
+          <em>draw the auth flow for my app — user logs in, we check credentials, if valid issue a JWT, if not show error, then redirect to dashboard</em>
+        </blockquote>
+        <p>Claude replies with the diagram and a live link you can open immediately:</p>
+        <pre><code>flowchart TD
+  login([User logs in]) --&gt; check{Credentials valid?}
+  check --&gt;|valid| jwt[Issue JWT]
+  check --&gt;|invalid| err[Show error]
+  jwt --&gt; dash([Redirect to dashboard])</code></pre>
         <p>
+          <a href="https://florajs.dev/playground/#flora:VY6xDsIwEEN_5ZSJSvQHGGCABUYoYggdQnIlgZBIlysd2v47JGJhs-xn2aPQ0aBYic7HQVtFDM3uGgB8vLuwkOeElHUCF9oK6noN2qJ-jltCg4Gd8gneyjuzmXOthBmbijnBY2C5T6lHOFya9h9x4QchkTzZOGQRqVDfXlkzKtmFPKJxhJqBY3FuUZFpK7EUbPGV_xvsVO9ZzB8">Open this diagram in the playground →</a>
+        </p>
+        <p>
+          The skill also triggers on "map out the auth flow in this codebase", "visualize the lineage
+          in my dbt project", "show me everything downstream of stg_orders", and anything else that
+          reads like a diagram request — even without an explicit "diagram" keyword.
           Claude replies with Flora syntax, a live playground link, and — if your project uses
           <code>@topspinj/flora</code> or the <code>florajs</code> Python package — runnable
           integration code. The skill follows the open
