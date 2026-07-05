@@ -45,6 +45,9 @@ Try it live in the [playground](https://florajs.dev/playground/) — diagrams ar
 npm install @topspinj/flora
 ```
 
+> [!NOTE]
+> The npm package is `@topspinj/flora` — `florajs` on npm is an unrelated package.
+
 ```javascript
 import { render } from "@topspinj/flora";
 

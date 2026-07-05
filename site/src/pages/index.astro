@@ -139,6 +139,7 @@ const heroDefault = `flowchart LR
           </button>
         </div>
       </div>
+      <p class="install-note">The npm package is <code>@topspinj/flora</code> &mdash; <code>florajs</code> on npm is an unrelated package.</p>
       <pre class="usage-code"><code><span class="t-kw">import</span> &#123; render &#125; <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora"</span>;
 
 <span class="t-kw">const</span> &#123; warnings &#125; = <span class="t-fn">render</span>(
@@ -666,6 +667,13 @@ const heroDefault = `flowchart LR
   }
 
   .install-row {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .install-note {
+    font-size: 13px;
+    color: var(--color-text-secondary);
     text-align: center;
     margin-bottom: 32px;
   }
