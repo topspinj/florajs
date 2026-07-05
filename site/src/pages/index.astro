@@ -18,8 +18,9 @@ const heroDefault = `flowchart LR
       <div class="hero-content">
         <h1><em>Beautiful,</em> AI-native<br /> diagrams.</h1>
         <p class="hero-sub">
-          A fault-tolerant, Mermaid-compatible diagram library for AI
-          applications. Interactive SVGs from imperfect input.
+          Most diagram syntax is now machine-generated &mdash; and imperfect.
+          Flora renders it gracefully instead of failing silently:
+          interactive SVGs plus structured warnings, from Mermaid-compatible input.
         </p>
         <div class="hero-actions">
           <a href="#get-started" class="btn btn-primary">Get Started</a>
@@ -165,39 +166,6 @@ const heroDefault = `flowchart LR
         <div class="api-card">
           <code>toLayout(input)</code>
           <p>Parse and return computed node/edge positions.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- What's next -->
-  <section class="roadmap">
-    <div class="container">
-      <h2>What&rsquo;s next</h2>
-      <p class="section-sub">
-        Flowcharts are fully supported today. Here&rsquo;s where Flora is headed.
-      </p>
-      <div class="roadmap-list">
-        <div class="roadmap-item">
-          <span class="rm-badge rm-next">Next</span>
-          <div>
-            <h3>Builder API</h3>
-            <p>Build diagrams from JS objects&mdash;ideal for AI tool-use with structured output.</p>
-          </div>
-        </div>
-        <div class="roadmap-item">
-          <span class="rm-badge rm-next">Next</span>
-          <div>
-            <h3>Streaming Rendering</h3>
-            <p>Progressive rendering as LLM tokens stream in. Nodes appear in real-time.</p>
-          </div>
-        </div>
-        <div class="roadmap-item">
-          <span class="rm-badge rm-future">Future</span>
-          <div>
-            <h3>More Diagram Types</h3>
-            <p>Entity-relationship diagrams, sequence diagrams, and beyond.</p>
-          </div>
         </div>
       </div>
     </div>
@@ -478,7 +446,6 @@ const heroDefault = `flowchart LR
   .problem h2,
   .features h2,
   .get-started h2,
-  .roadmap h2,
   .cta h2,
   .lineage-demo h2 {
     font-family: var(--font-serif);
@@ -787,70 +754,6 @@ const heroDefault = `flowchart LR
     color: var(--color-text-secondary);
   }
 
-  /* ── Roadmap ── */
-
-  .roadmap {
-    padding: 96px 24px;
-  }
-
-  .roadmap h2 {
-    margin-bottom: 48px;
-  }
-
-  .roadmap-list {
-    max-width: 640px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .roadmap-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 20px 24px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: 10px;
-    background: var(--color-surface);
-  }
-
-  .rm-badge {
-    flex-shrink: 0;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 999px;
-    margin-top: 1px;
-  }
-
-  .rm-shipped {
-    background: #d1fae5;
-    color: #065f46;
-  }
-
-  .rm-next {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  .rm-future {
-    background: var(--color-accent-light);
-    color: var(--color-accent);
-  }
-
-  .roadmap-item h3 {
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 2px;
-  }
-
-  .roadmap-item p {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-    line-height: 1.55;
-  }
-
   /* ── Closing CTA ── */
 
   .cta {
@@ -914,7 +817,6 @@ const heroDefault = `flowchart LR
     .problem h2,
     .features h2,
     .get-started h2,
-    .roadmap h2,
     .lineage-demo h2 {
       font-size: 28px;
     }
