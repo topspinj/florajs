@@ -114,6 +114,38 @@ function renderParseFailureSVGString(warnings: ParseWarning[], theme: FloraTheme
     + `</svg>`;
 }
 
+function renderInternalErrorSVG(error: Error, theme: FloraTheme): SVGSVGElement {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("height", "100%");
+  svg.setAttribute("viewBox", "0 0 560 100");
+  svg.style.background = theme.background;
+
+  const title = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  title.setAttribute("x", "280");
+  title.setAttribute("y", "42");
+  title.setAttribute("text-anchor", "middle");
+  title.setAttribute("font-family", theme.fontFamily);
+  title.setAttribute("font-size", String(theme.fontSize));
+  title.setAttribute("font-weight", "600");
+  title.setAttribute("fill", theme.nodeColors.text);
+  title.textContent = "Diagram failed to render";
+  svg.appendChild(title);
+
+  const detail = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  detail.setAttribute("x", "280");
+  detail.setAttribute("y", "68");
+  detail.setAttribute("text-anchor", "middle");
+  detail.setAttribute("font-family", theme.fontFamily);
+  detail.setAttribute("font-size", String(theme.fontSize - 2));
+  detail.setAttribute("fill", theme.edgeColors.label);
+  detail.textContent = error.message;
+  svg.appendChild(detail);
+
+  return svg;
+}
+
 function isParseFailure(ast: DiagramAST, warnings: ParseWarning[]): boolean {
   return (
     ast.type === "flowchart" &&
@@ -125,6 +157,8 @@ function isParseFailure(ast: DiagramAST, warnings: ParseWarning[]): boolean {
 export interface RenderResult {
   warnings: ParseWarning[];
   unsupportedType?: string;
+  /** Set when layout or rendering threw internally; an error-state SVG is shown instead. */
+  error?: Error;
 }
 
 export function render(input: string, target: HTMLElement, options: FloraOptions = {}): RenderResult {
@@ -145,13 +179,20 @@ export function render(input: string, target: HTMLElement, options: FloraOptions
     return { warnings };
   }
 
-  const layout = computeLayout(ast, theme);
-  const svg = renderSVG(layout, options);
-
-  target.innerHTML = "";
-  target.appendChild(svg);
-
-  return { warnings };
+  // Never leave the target blank: fault tolerance in the parser is no help
+  // if an internal layout/render bug throws halfway through.
+  try {
+    const layout = computeLayout(ast, theme);
+    const svg = renderSVG(layout, options);
+    target.innerHTML = "";
+    target.appendChild(svg);
+    return { warnings };
+  } catch (thrown) {
+    const error = thrown instanceof Error ? thrown : new Error(String(thrown));
+    target.innerHTML = "";
+    target.appendChild(renderInternalErrorSVG(error, theme));
+    return { warnings, error };
+  }
 }
 
 export function toAST(input: string, options: { strict?: boolean } = {}): { ast: DiagramAST; warnings: ParseWarning[] } {
