@@ -57,6 +57,8 @@ Nodes are defined inline with their shape syntax. If a node appears multiple tim
 | Cylinder | `A[(Label)]` | Databases, storage |
 | Queue | `A[[Label]]` | Message queues, buffers |
 
+To put brackets or parentheses inside a label, wrap the whole label in double quotes: `A["uses [square] brackets"]`. The quotes are stripped from the rendered label (Mermaid behavior); this also works for pipe edge labels (`-->|"yes"|`).
+
 ### Edges
 
 ```
