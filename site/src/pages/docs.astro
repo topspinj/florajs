@@ -678,6 +678,15 @@ flowchart TD
   C <span class="t-op">--&gt;</span> D<span class="t-op">([</span><span class="t-str">Result</span><span class="t-op">])</span>
   C <span class="t-op">--&gt;</span> E<span class="t-op">[(</span><span class="t-str">Postgres</span><span class="t-op">)]</span>
   C <span class="t-op">--&gt;</span> F<span class="t-op">[[</span><span class="t-str">SQS</span><span class="t-op">]]</span></code></pre>
+
+        <h3>Quoted labels</h3>
+        <p>
+          Wrap a label in double quotes to include characters that would otherwise be read as
+          delimiters, like brackets and parentheses. The quotes are stripped from the rendered
+          label, matching Mermaid: <code>A["uses [square] brackets"]</code> renders as
+          <em>uses [square] brackets</em>. Quotes that don't wrap the whole label are kept
+          literally, and quoted edge labels (<code>--&gt;|"yes"|</code>) work the same way.
+        </p>
       </section>
 
       <section id="edges">

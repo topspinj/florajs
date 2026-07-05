@@ -39,6 +39,22 @@ export interface TokenizeResult {
   warnings: ParseWarning[];
 }
 
+// Mermaid strips a double-quote pair that wraps the whole label (quoting is
+// how special characters like brackets get into a label); inner text is kept
+// verbatim. Quotes that don't wrap the full label are literal.
+function unquoteLabel(text: string): string {
+  const trimmed = text.trim();
+  if (
+    trimmed.length >= 2 &&
+    trimmed.startsWith('"') &&
+    trimmed.endsWith('"') &&
+    !trimmed.slice(1, -1).includes('"')
+  ) {
+    return trimmed.slice(1, -1);
+  }
+  return text;
+}
+
 const KEYWORDS = new Set(["flowchart", "graph", "subgraph", "end"]);
 const DIRECTIONS = new Set(["TB", "TD", "BT", "LR", "RL"]);
 
@@ -166,6 +182,15 @@ export function tokenize(input: string): TokenizeResult {
         });
         break;
       }
+      if (input[pos] === '"') {
+        // Brackets inside a quoted span are literal, not delimiters
+        text += advance();
+        while (pos < input.length && input[pos] !== '"' && input[pos] !== "\n") {
+          text += advance();
+        }
+        if (input[pos] === '"') text += advance();
+        continue;
+      }
       if (input[pos] === open) depth++;
       if (input[pos] === close) depth--;
       if (depth > 0) text += advance();
@@ -179,7 +204,7 @@ export function tokenize(input: string): TokenizeResult {
         severity: "error",
       });
     }
-    return text;
+    return unquoteLabel(text);
   }
 
   while (pos < input.length) {
@@ -239,7 +264,7 @@ export function tokenize(input: string): TokenizeResult {
           severity: "error",
         });
       }
-      tokens.push({ type: "pipe_text", value: text, line: startLine, col: startCol });
+      tokens.push({ type: "pipe_text", value: unquoteLabel(text), line: startLine, col: startCol });
       continue;
     }
 

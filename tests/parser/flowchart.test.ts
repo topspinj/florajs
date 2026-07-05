@@ -33,6 +33,39 @@ describe("flowchart parser", () => {
     expect(ast.nodes.find((n) => n.id === "B")!.label).toBe("End");
   });
 
+  it("strips a double-quote pair wrapping a node label", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      A["quoted text"] --> B("also (quoted)")`);
+
+    expect(ast.nodes.find((n) => n.id === "A")!.label).toBe("quoted text");
+    expect(ast.nodes.find((n) => n.id === "B")!.label).toBe("also (quoted)");
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("treats brackets inside a quoted label as literal", () => {
+    const { ast, warnings } = parse(`flowchart LR
+      A["closing ] bracket"] --> B["open [ bracket"]`);
+
+    expect(ast.nodes.find((n) => n.id === "A")!.label).toBe("closing ] bracket");
+    expect(ast.nodes.find((n) => n.id === "B")!.label).toBe("open [ bracket");
+    expect(warnings).toHaveLength(0);
+  });
+
+  it("strips a double-quote pair wrapping a pipe edge label", () => {
+    const { ast } = parse(`flowchart LR
+      A -->|"yes"| B`);
+
+    expect(ast.edges[0]!.label).toBe("yes");
+  });
+
+  it("keeps quotes that do not wrap the whole label", () => {
+    const { ast } = parse(`flowchart LR
+      A[say "hi" twice] --> B["a" and "b"]`);
+
+    expect(ast.nodes.find((n) => n.id === "A")!.label).toBe('say "hi" twice');
+    expect(ast.nodes.find((n) => n.id === "B")!.label).toBe('"a" and "b"');
+  });
+
   it("parses diamond shapes", () => {
     const { ast } = parse(`flowchart TD
       A{Decision}`);
