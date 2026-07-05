@@ -9,21 +9,55 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4f6df5" alt="MIT License"></a>
 </p>
 
-<p align="center">A fault-tolerant, Mermaid-compatible diagram library for AI applications. Interactive SVGs from imperfect input.</p>
+<p align="center"><b>The diagram renderer built for the AI era.</b><br>Most diagram syntax is now machine-generated and imperfect. Flora renders it gracefully instead of failing silently.</p>
 
-LLMs produce broken Mermaid constantly — Mermaid throws a parse error and your UI goes blank. Flora understands the flowchart syntax you already write, renders what it can, and returns structured warnings for the rest. The output is polished and interactive out of the box: better typography, colors, and hover/click/zoom.
+## Broken input, working diagram
 
-## Try it
+LLMs write Mermaid constantly — and get it slightly wrong constantly. Feed this to a strict parser and you get a blank screen:
 
-Open the [playground](https://florajs.dev/playground/) — write a diagram, watch it render live, and share it with a link. Diagrams are encoded in the URL fragment, so no account or server is involved.
+```
+flowchart TD
+  A[User request] --> B{Cache hit?}
+  B -->|yes| C[Return cached]
+  B -->|no| D[(Postgres]
+  style D fill:#f9f
+  D --> E[Query and render]
+```
 
-## Install
+**Strict parsers (Mermaid):** `Parse error on line 4 ... Expecting 'SQE', got 'PS'`. Nothing renders. Your UI shows an error box or nothing at all.
+
+**Flora:** the four valid lines render as an interactive diagram. The unclosed `D[(Postgres]` is skipped whole and reported as a structured diagnostic — never reinterpreted as garbage nodes — and the `style` directive is acknowledged and deliberately ignored:
+
+```json
+[
+  { "line": 4, "col": 16, "message": "Unterminated () (missing closing ))", "severity": "error" },
+  { "line": 5, "col": 3, "message": "'style' ignored: styling directive — Flora handles styling through themes", "severity": "info" }
+]
+```
+
+Try it live in the [playground](https://florajs.dev/playground/) — diagrams are encoded in the URL, so they're shareable with a link.
+
+## Quickstart
+
+### JavaScript
 
 ```bash
 npm install @topspinj/flora
 ```
 
-Or drop it into any HTML page with no build step — the CDN bundle exposes `window.Flora` and registers a `<flora-diagram>` custom element:
+```javascript
+import { render } from "@topspinj/flora";
+
+const { warnings } = render(
+  `flowchart LR
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Do thing]
+    B -->|No| D[Other thing]`,
+  document.getElementById("diagram")
+);
+```
+
+Or with no build step — the CDN bundle registers a `<flora-diagram>` custom element:
 
 ```html
 <script src="https://unpkg.com/@topspinj/flora"></script>
@@ -35,48 +69,57 @@ flowchart TD
 </flora-diagram>
 ```
 
-Diagrams are interactive (zoom, pan, click-to-highlight) by default — set `interactive="false"` to disable. The element re-renders when its text content or `theme`/`interactive` attributes change.
+Diagrams are interactive by default: scroll to zoom, drag to pan, click a node to highlight its upstream/downstream lineage.
 
-Using Python? The [`florajs` package](python/) brings Flora to Jupyter notebooks
-and headless SVG export: `pip install florajs`.
+### Python / Jupyter
 
-## Usage
-
-```javascript
-import { render } from "@topspinj/flora";
-
-render(
-  `flowchart LR
-    A[Start] --> B{Decision}
-    B -->|Yes| C[Do thing]
-    B -->|No| D[Other thing]`,
-  document.getElementById("diagram")
-);
+```bash
+pip install florajs
 ```
+
+```python
+from florajs import Diagram
+
+d = Diagram("""
+flowchart TD
+  a[Start] --> b{Decide}
+  b -->|yes| c([Done])
+  b -->|no| a
+""", theme="sketch")
+d              # displays interactively in Jupyter
+d.to_svg_file("decision.svg")  # headless export — embedded V8, no browser
+```
+
+There's also a programmatic `Flowchart` builder — see the [Python docs](python/).
+
+## Fault tolerance is the contract
+
+Flora's rule is **never blank, never silently wrong**. Every line of input lands in one of three tiers:
+
+1. **Supported** — graph structure: nodes and shapes, edges and labels, chaining, subgraphs, direction, comments. Renders faithfully.
+2. **Gracefully ignored** — Mermaid presentation/behavior directives (`classDef`, `class`, `style`, `linkStyle`, `click`, `%%{init}%%`). Recognized, skipped, reported as `info` diagnostics. Flora handles styling through themes and clicks through `onNodeClick`.
+3. **Rejected loudly** — anything the parser can't understand is skipped whole and reported as an `error` diagnostic (`{ line, col, message, severity }`). It is never guessed into extra nodes. If nothing parses, `render()` shows an error card, not an empty SVG.
+
+Prefer failing? Pass `strict: true` to throw a `FloraParseError` (diagnostics on `.warnings`) instead of rendering best-effort. The rehype plugin is strict by default so broken diagrams fail your build.
 
 ## API
 
-### `render(input, element, options?)`
+All functions accept the same options (below) and return `warnings` alongside their result.
 
-Parse and render a diagram into a DOM element.
+| Function | Returns |
+|---|---|
+| `render(input, element, options?)` | renders into a DOM element |
+| `toSVGElement(input, options?)` | detached `SVGSVGElement` |
+| `toSVGString(input, options?)` | SVG markup string (no DOM needed) |
+| `toPNG(input, options?)` | `Promise<Blob>` |
+| `toAST(input, options?)` | parsed AST, no rendering |
+| `toLayout(input, options?)` | computed node/edge positions |
 
-### `toSVGElement(input, options?)`
-
-Returns an SVGSVGElement without attaching it to the DOM.
-
-### `toAST(input, options?)`
-
-Parse input and return the AST without rendering.
-
-### `toLayout(input, options?)`
-
-Parse input and return computed node/edge positions.
-
-## Options
+### Options
 
 ```typescript
 {
-  theme: {
+  theme: "default" | "tufte" | "digital" | "sketch" | { /* overrides */
     background: "#ffffff",
     nodeColors: { fill: "#f0f4ff", stroke: "#4f6df5", text: "#1e293b" },
     edgeColors: { stroke: "#94a3b8", label: "#64748b" },
@@ -85,112 +128,53 @@ Parse input and return computed node/edge positions.
     nodeRadius: 8,
     shadow: true,
   },
-  interactive: true,
-  strict: false, // throw FloraParseError on parse errors instead of rendering best-effort
-  onNodeClick: (nodeId) => console.log("clicked", nodeId),
-  onNodeHover: (nodeId) => console.log("hovered", nodeId),
-  onHighlight: (nodeId, upstream, downstream) => console.log("lineage", nodeId),
+  interactive: true,     // zoom, pan, hover, click-to-highlight lineage
+  strict: false,         // throw FloraParseError instead of best-effort
+  onNodeClick: (nodeId) => {},
+  onNodeHover: (nodeId) => {},
+  onHighlight: (nodeId, upstream, downstream) => {},
 }
 ```
 
-## Error handling
+### Node shapes
 
-Flora's contract is **never blank, never silently wrong**:
+| Shape | Syntax | | Shape | Syntax |
+|---|---|---|---|---|
+| Rectangle | `A[text]` | | Stadium | `A([text])` |
+| Rounded | `A(text)` | | Cylinder | `A[(text)]` |
+| Diamond | `A{text}` | | Queue | `A[[text]]` |
 
-- A line the parser can't understand is skipped whole and reported as a diagnostic (`{ line, col, message, severity }`) — it is never reinterpreted as extra nodes. Everything valid still renders.
-- Mermaid styling and behavior directives (`classDef`, `class`, `style`, `linkStyle`, `click`, `%%{init}%%`) are recognized and deliberately ignored with `info` diagnostics — Flora handles styling through themes and clicks through `onNodeClick`.
-- If nothing parses, `render()` shows an error card listing the diagnostics instead of a blank SVG.
-- Pass `strict: true` to any API function to throw a `FloraParseError` (all diagnostics on `.warnings`) instead of rendering best-effort. The rehype plugin is strict by default so a broken diagram fails your build; pass `strict: false` to opt out.
+Subgraphs (`subgraph Name ... end`) render as collapsible groups and nest.
 
-## Node Shapes
+### React
 
-| Shape | Syntax | Example |
-|-------|--------|---------|
-| Rectangle | `[text]` | `A[Start]` |
-| Rounded | `(text)` | `A(Process)` |
-| Diamond | `{text}` | `A{Decision}` |
-| Stadium | `([text])` | `A([Terminal])` |
-| Cylinder | `[(text)]` | `A[(Database)]` |
-| Queue | `[[text]]` | `A[[Kafka]]` |
+```jsx
+import { Flora } from "@topspinj/flora/react";
 
-## Subgraphs
-
-Group nodes into collapsible subgraphs:
-
-```
-flowchart TD
-  subgraph Backend
-    API --> DB[(Database)]
-  end
-  subgraph Frontend
-    UI --> API
-  end
+<Flora input={source} theme="tufte" onNodeClick={(id) => select(id)} />
 ```
 
-Subgraphs render with a dashed border and a label pill. Nested subgraphs are supported.
-
-## Interactivity
-
-Flora diagrams are interactive by default:
-
-- **Zoom & pan** — scroll to zoom, drag to pan
-- **Hover** — nodes highlight on hover
-- **Lineage highlighting** — click any node to trace its upstream and downstream connections. Connected nodes and edges stay highlighted while everything else fades out. Click the node again, press Escape, or click the background to clear.
+### Rehype (Markdown pipelines)
 
 ```javascript
-render(input, element, {
-  interactive: true,
-  onNodeClick: (nodeId) => console.log("clicked", nodeId),
-  onNodeHover: (nodeId) => console.log("hovered", nodeId),
-  onHighlight: (nodeId, upstream, downstream) => {
-    console.log("lineage", { nodeId, upstream, downstream });
-  },
-});
+import rehypeFlora from "@topspinj/flora/rehype";
+// turns ```flora / ```mermaid code fences into rendered diagrams; strict by default
 ```
 
 ## Use with Claude Code
 
-Flora ships an official [Claude Code](https://claude.com/claude-code) plugin: a skill that teaches Claude to write correct Flora syntax, pick sensible shapes and layouts, visualize dbt lineage straight from a `manifest.json`, and hand back a playground share link so you see the rendered diagram immediately.
+Flora ships a [Claude Code](https://claude.com/claude-code) plugin — a skill that writes correct Flora syntax, visualizes dbt lineage from a `manifest.json`, and returns playground share links:
 
 ```
 /plugin marketplace add topspinj/florajs
 /plugin install flora@florajs
 ```
 
-Then invoke the skill directly with `/flora`:
+Then: `/flora draw the auth flow for my app`. The skill uses the open [Agent Skills](https://code.claude.com/docs/en/skills) format, so it works with other agents too.
 
-```
-/flora draw the auth flow for my app — user logs in, we check credentials, if valid issue a JWT, if not show error, then redirect to dashboard
-```
+## Feedback & contributing
 
-Claude produces the diagram and a live link:
-
-```
-flowchart TD
-  login([User logs in]) --> check{Credentials valid?}
-  check -->|valid| jwt[Issue JWT]
-  check -->|invalid| err[Show error]
-  jwt --> dash([Redirect to dashboard])
-```
-
-[Open in playground →](https://florajs.dev/playground/#flora:VY6xDsIwEEN_5ZSJSvQHGGCABUYoYggdQnIlgZBIlysd2v47JGJhs-xn2aPQ0aBYic7HQVtFDM3uGgB8vLuwkOeElHUCF9oK6noN2qJ-jltCg4Gd8gneyjuzmXOthBmbijnBY2C5T6lHOFya9h9x4QchkTzZOGQRqVDfXlkzKtmFPKJxhJqBY3FuUZFpK7EUbPGV_xvsVO9ZzB8)
-
-The skill follows the open [Agent Skills](https://code.claude.com/docs/en/skills) format, so it works with other agents that support it too.
-
-## Supported Diagram Types
-
-- **Flowcharts** — `flowchart LR`, `flowchart TD`, etc.
-- **ERD** — coming soon
-
-## Feedback & Contributing
-
-Flora is young and shaped by the people using it — feedback of any size is welcome, and it all goes through [GitHub issues](https://github.com/topspinj/florajs/issues):
-
-- [Report a bug](https://github.com/topspinj/florajs/issues/new?template=bug_report.yml) — a [playground](https://florajs.dev/playground/) share link is the perfect reproduction
-- [Request a feature](https://github.com/topspinj/florajs/issues/new?template=feature_request.yml) — new syntax, API additions, theme ideas
-- [General feedback](https://github.com/topspinj/florajs/issues/new?template=feedback.yml) — docs gaps, confusing behavior, or what you built with Flora
-
-Pull requests are welcome too — the [open issues](https://github.com/topspinj/florajs/issues) are a good place to start.
+Flora is young and shaped by the people using it. [Bugs](https://github.com/topspinj/florajs/issues/new?template=bug_report.yml) (a playground link is the perfect repro), [feature requests](https://github.com/topspinj/florajs/issues/new?template=feature_request.yml), and [general feedback](https://github.com/topspinj/florajs/issues/new?template=feedback.yml) all go through GitHub issues. PRs welcome — the [open issues](https://github.com/topspinj/florajs/issues) are a good place to start.
 
 ## License
 
