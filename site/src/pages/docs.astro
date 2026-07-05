@@ -828,9 +828,15 @@ flowchart TD
   input: <span class="t-kw">string</span>,
   target: <span class="t-kw">HTMLElement</span>,
   options?: <span class="t-kw">FloraOptions</span>
-): &#123; warnings: <span class="t-kw">ParseWarning</span>[] &#125;</code></pre>
+): &#123; warnings: <span class="t-kw">ParseWarning</span>[]; error?: <span class="t-kw">Error</span> &#125;</code></pre>
         </div>
         <p>This is the primary API. It handles the full pipeline and attaches an interactive SVG to the target element. Subgraph collapse/expand is wired up automatically.</p>
+        <p>
+          <code>render()</code> never leaves the target element empty. If layout or rendering throws
+          internally, it shows an error-state SVG and returns the caught <code>error</code> instead of
+          propagating it. (With <code>strict: true</code>, parse errors still throw
+          <code>FloraParseError</code> before rendering starts.)
+        </p>
         <pre><code><span class="t-kw">import</span> &#123; render &#125; <span class="t-kw">from</span> <span class="t-str">"@topspinj/flora"</span>;
 
 <span class="t-kw">const</span> &#123; warnings &#125; = <span class="t-fn">render</span>(<span class="t-str">`flowchart LR
@@ -1081,7 +1087,7 @@ console.<span class="t-fn">log</span>(ast.edges);
             </thead>
             <tbody>
               <tr><td><code>FloraOptions</code></td><td>Options passed to <code>render()</code>, <code>toSVGElement()</code>, etc.</td></tr>
-              <tr><td><code>RenderResult</code></td><td>Return type of <code>render()</code> &mdash; <code>&#123; warnings, unsupportedType? &#125;</code></td></tr>
+              <tr><td><code>RenderResult</code></td><td>Return type of <code>render()</code> &mdash; <code>&#123; warnings, unsupportedType?, error? &#125;</code></td></tr>
               <tr><td><code>ParseResult</code></td><td>Return type of <code>toAST()</code> &mdash; <code>&#123; ast, warnings &#125;</code></td></tr>
               <tr><td><code>ParseWarning</code></td><td>A structured diagnostic: <code>&#123; line, col, message, severity &#125;</code></td></tr>
               <tr><td><code>ParseWarningSeverity</code></td><td><code>"error" | "info"</code> &mdash; see <a href="#fault-tolerance">Error Handling</a></td></tr>
