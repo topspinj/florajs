@@ -13,6 +13,7 @@ import Layout from "../layouts/Layout.astro";
           <option value="architecture">Web architecture</option>
           <option value="subgraphs">Subgraphs</option>
           <option value="shapes">Node shapes</option>
+          <option value="erd">ERD</option>
         </select>
         <label for="theme">Theme</label>
         <select id="theme">
@@ -111,6 +112,26 @@ import Layout from "../layouts/Layout.astro";
   f -->|labeled| g[Solid edge]
   f -.->|dotted| h[Dotted edge]
   f ==>|thick| i[Thick edge]`,
+    erd: `erDiagram
+  CUSTOMER ||--o{ ORDER : places
+  ORDER ||--|{ LINE-ITEM : contains
+  CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
+
+  CUSTOMER {
+    int id PK
+    string name
+    string email FK
+  }
+  ORDER {
+    int orderNumber PK
+    date placedAt
+    string status
+  }
+  LINE-ITEM {
+    int id PK
+    int quantity
+    float unitPrice
+  }`,
   };
 
   const input = document.getElementById("input") as HTMLTextAreaElement;
@@ -167,7 +188,7 @@ import Layout from "../layouts/Layout.astro";
         interactive: true,
       });
       if (unsupportedType) {
-        showStatus(`Unsupported diagram type: ${unsupportedType}. Flora currently supports flowcharts only.`);
+        showStatus(`Unsupported diagram type: ${unsupportedType}. Flora currently supports flowchart and ERD diagrams.`);
       } else if (warnings.length > 0) {
         const errors = warnings.filter((w) => w.severity === "error");
         const infos = warnings.filter((w) => w.severity !== "error");
