@@ -1,12 +1,15 @@
 import { parse } from "./parser/index.js";
 import { computeLayout } from "./layout/index.js";
+import { computeERDLayout } from "./layout/erd.js";
 import { renderSVG } from "./renderer/index.js";
+import { renderERDSVG } from "./renderer/erd.js";
 import { renderSVGString, type RenderSVGStringOptions } from "./renderer/svg-string.js";
+import { renderERDString } from "./renderer/erd-string.js";
 import { defaultTheme } from "./themes/default.js";
 import { tufteTheme } from "./themes/tufte.js";
 import { digitalTheme } from "./themes/digital.js";
 import { resolveTheme } from "./themes/index.js";
-import type { FloraOptions, DiagramAST, FloraTheme, LayoutResult, ParseWarning } from "./types.js";
+import type { FloraOptions, DiagramAST, FloraTheme, LayoutResult, ERDLayoutResult, ParseWarning } from "./types.js";
 import { checkStrict } from "./errors.js";
 
 function escapeXml(s: string): string {
@@ -38,7 +41,7 @@ function renderUnsupportedSVG(detectedType: string, theme: FloraTheme): SVGSVGEl
   text2.setAttribute("font-family", theme.fontFamily);
   text2.setAttribute("font-size", String(theme.fontSize - 2));
   text2.setAttribute("fill", theme.edgeColors.label);
-  text2.textContent = "Flora currently supports flowchart diagrams only.";
+  text2.textContent = "Flora currently supports flowchart and ERD diagrams.";
   svg.appendChild(text2);
 
   return svg;
@@ -48,7 +51,7 @@ function renderUnsupportedSVGString(detectedType: string, theme: FloraTheme): st
   const escaped = escapeXml(detectedType);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 400 120" style="background:${escapeXml(theme.background)}">`
     + `<text x="200" y="45" text-anchor="middle" font-family="${escapeXml(theme.fontFamily)}" font-size="${theme.fontSize}" fill="${escapeXml(theme.edgeColors.stroke)}">Unsupported diagram type: ${escaped}</text>`
-    + `<text x="200" y="75" text-anchor="middle" font-family="${escapeXml(theme.fontFamily)}" font-size="${theme.fontSize - 2}" fill="${escapeXml(theme.edgeColors.label)}">Flora currently supports flowchart diagrams only.</text>`
+    + `<text x="200" y="75" text-anchor="middle" font-family="${escapeXml(theme.fontFamily)}" font-size="${theme.fontSize - 2}" fill="${escapeXml(theme.edgeColors.label)}">Flora currently supports flowchart and ERD diagrams.</text>`
     + `</svg>`;
 }
 
@@ -147,11 +150,9 @@ function renderInternalErrorSVG(error: Error, theme: FloraTheme): SVGSVGElement 
 }
 
 function isParseFailure(ast: DiagramAST, warnings: ParseWarning[]): boolean {
-  return (
-    ast.type === "flowchart" &&
-    ast.nodes.length === 0 &&
-    warnings.some((w) => w.severity === "error")
-  );
+  if (ast.type === "flowchart") return ast.nodes.length === 0 && warnings.some((w) => w.severity === "error");
+  if (ast.type === "erd") return ast.entities.length === 0 && warnings.some((w) => w.severity === "error");
+  return false;
 }
 
 export interface RenderResult {
@@ -182,8 +183,14 @@ export function render(input: string, target: HTMLElement, options: FloraOptions
   // Never leave the target blank: fault tolerance in the parser is no help
   // if an internal layout/render bug throws halfway through.
   try {
-    const layout = computeLayout(ast, theme);
-    const svg = renderSVG(layout, options);
+    let svg: SVGSVGElement;
+    if (ast.type === "erd") {
+      const layout = computeERDLayout(ast, theme);
+      svg = renderERDSVG(layout, options);
+    } else {
+      const layout = computeLayout(ast, theme);
+      svg = renderSVG(layout, options);
+    }
     target.innerHTML = "";
     target.appendChild(svg);
     return { warnings };
@@ -201,11 +208,15 @@ export function toAST(input: string, options: { strict?: boolean } = {}): { ast:
   return result;
 }
 
-export function toLayout(input: string, options: { strict?: boolean } = {}): { layout: LayoutResult; warnings: ParseWarning[]; unsupportedType?: string } {
+export function toLayout(input: string, options: { strict?: boolean } = {}): { layout: LayoutResult; erdLayout?: ERDLayoutResult; warnings: ParseWarning[]; unsupportedType?: string } {
   const { ast, warnings } = parse(input);
   checkStrict(options.strict, warnings, ast.type === "unsupported" ? ast.detectedType : undefined);
+  const emptyLayout: LayoutResult = { nodes: [], edges: [], subgraphs: [], width: 0, height: 0 };
   if (ast.type === "unsupported") {
-    return { layout: { nodes: [], edges: [], subgraphs: [], width: 0, height: 0 }, warnings, unsupportedType: ast.detectedType };
+    return { layout: emptyLayout, warnings, unsupportedType: ast.detectedType };
+  }
+  if (ast.type === "erd") {
+    return { layout: emptyLayout, erdLayout: computeERDLayout(ast), warnings };
   }
   const layout = computeLayout(ast);
   return { layout, warnings };
@@ -219,6 +230,10 @@ export function toSVGElement(input: string, options: FloraOptions = {}): { svg: 
   }
   if (isParseFailure(ast, warnings)) {
     return { svg: renderParseFailureSVG(warnings, resolveTheme(options.theme)), warnings };
+  }
+  if (ast.type === "erd") {
+    const layout = computeERDLayout(ast, resolveTheme(options.theme));
+    return { svg: renderERDSVG(layout, options), warnings };
   }
   const layout = computeLayout(ast);
   const svg = renderSVG(layout, options);
@@ -234,6 +249,10 @@ export function toSVGString(input: string, options: RenderSVGStringOptions & { s
   const theme = resolveTheme(options.theme);
   if (isParseFailure(ast, warnings)) {
     return { svg: renderParseFailureSVGString(warnings, theme), warnings };
+  }
+  if (ast.type === "erd") {
+    const layout = computeERDLayout(ast, theme);
+    return { svg: renderERDString(layout, { theme: options.theme }), warnings };
   }
   const layout = computeLayout(ast, theme);
   const svg = renderSVGString(layout, options);
@@ -289,11 +308,15 @@ export async function toPNG(input: string, options: ToPNGOptions = {}): Promise<
 }
 
 export { FloraParseError } from "./errors.js";
-export { parse } from "./parser/index.js";
+export { parse, parseERD } from "./parser/index.js";
 export { computeLayout } from "./layout/index.js";
+export { computeERDLayout } from "./layout/erd.js";
 export { renderSVG } from "./renderer/index.js";
+export { renderERDSVG } from "./renderer/erd.js";
 export { renderSVGString } from "./renderer/svg-string.js";
 export type { RenderSVGStringOptions } from "./renderer/svg-string.js";
+export { renderERDString } from "./renderer/erd-string.js";
+export type { RenderERDStringOptions } from "./renderer/erd-string.js";
 export { defaultTheme } from "./themes/default.js";
 export { tufteTheme } from "./themes/tufte.js";
 export { digitalTheme } from "./themes/digital.js";
@@ -320,4 +343,12 @@ export type {
   ParseResult,
   ThemePreset,
   UnsupportedDiagramAST,
+  ERDAST,
+  ERDEntity,
+  ERDRelationship,
+  ERDAttribute,
+  ERDCardinality,
+  ERDLayoutResult,
+  ERDLayoutEntity,
+  ERDLayoutRelationship,
 } from "./types.js";

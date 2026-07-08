@@ -1,6 +1,8 @@
 import { parse } from "./parser/index.js";
 import { computeLayout } from "./layout/index.js";
+import { computeERDLayout } from "./layout/erd.js";
 import { renderSVGString } from "./renderer/svg-string.js";
+import { renderERDString } from "./renderer/erd-string.js";
 import { resolveTheme } from "./themes/index.js";
 import { checkStrict } from "./errors.js";
 import type { ThemePreset, FloraTheme } from "./types.js";
@@ -67,11 +69,17 @@ export default function rehypeFlora(options: RehypeFloraOptions = {}) {
       const { ast, warnings } = parse(source);
       checkStrict(strict, warnings, ast.type === "unsupported" ? ast.detectedType : undefined);
       if (ast.type === "unsupported") return;
-      // Nothing parsed — leave the code block so readers at least see the source
-      if (ast.nodes.length === 0 && warnings.some((w) => w.severity === "error")) return;
       const theme = resolveTheme(options.theme);
-      const layout = computeLayout(ast, theme);
-      const svgString = renderSVGString(layout, { theme: options.theme });
+
+      let svgString: string;
+      if (ast.type === "erd") {
+        if (ast.entities.length === 0 && warnings.some((w) => w.severity === "error")) return;
+        svgString = renderERDString(computeERDLayout(ast, theme), { theme: options.theme });
+      } else {
+        // Nothing parsed — leave the code block so readers at least see the source
+        if (ast.nodes.length === 0 && warnings.some((w) => w.severity === "error")) return;
+        svgString = renderSVGString(computeLayout(ast, theme), { theme: options.theme });
+      }
 
       const replacement: HastNode = {
         type: "element",

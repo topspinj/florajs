@@ -53,7 +53,72 @@ export interface UnsupportedDiagramAST {
   detectedType: string;
 }
 
-export type DiagramAST = FlowchartAST | UnsupportedDiagramAST;
+// ---------------------------------------------------------------------------
+// ERD AST
+// ---------------------------------------------------------------------------
+
+export type ERDCardinality = "zero-or-one" | "exactly-one" | "zero-or-many" | "one-or-many";
+
+export interface ERDAttribute {
+  type: string;
+  name: string;
+  key?: "PK" | "FK" | "UK";
+  comment?: string;
+}
+
+export interface ERDEntity {
+  id: string;
+  attributes: ERDAttribute[];
+}
+
+export interface ERDRelationship {
+  from: string;
+  to: string;
+  /** Display label on the relationship line. */
+  label: string;
+  fromCardinality: ERDCardinality;
+  toCardinality: ERDCardinality;
+  /** true = solid line (identifying), false = dashed (non-identifying). */
+  identifying: boolean;
+}
+
+export interface ERDAST {
+  type: "erd";
+  entities: ERDEntity[];
+  relationships: ERDRelationship[];
+}
+
+export type DiagramAST = FlowchartAST | ERDAST | UnsupportedDiagramAST;
+
+// ---------------------------------------------------------------------------
+// ERD layout types
+// ---------------------------------------------------------------------------
+
+export interface ERDLayoutEntity {
+  id: string;
+  attributes: ERDAttribute[];
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface ERDLayoutRelationship {
+  from: string;
+  to: string;
+  label: string;
+  fromCardinality: ERDCardinality;
+  toCardinality: ERDCardinality;
+  identifying: boolean;
+  points: Array<{ x: number; y: number }>;
+}
+
+export interface ERDLayoutResult {
+  entities: ERDLayoutEntity[];
+  relationships: ERDLayoutRelationship[];
+  width: number;
+  height: number;
+}
 
 export interface LayoutNode {
   id: string;
