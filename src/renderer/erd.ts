@@ -4,9 +4,11 @@ import { resolveTheme } from "../themes/index.js";
 const HEADER_HEIGHT = 36;
 const ATTR_ROW_HEIGHT = 28;
 const MARK_DIST1 = 12; // inner mark distance from entity boundary
-const MARK_DIST2 = 24; // outer mark / crow-foot tip distance
+const MARK_DIST2 = 24; // crow-foot base / outer tick distance
+const MARK_DIST3 = 36; // zero-circle distance (beyond crow-foot base)
 const MARK_HALF = 10;  // half-width of perpendicular tick lines
 const CROW_SPREAD = 10; // perpendicular spread of crow's-foot side prongs
+const NAME_COL_X = 56; // fixed name-column start (leaves room for type column)
 
 let _nextId = 0;
 function uid(): string { return String(_nextId++); }
@@ -96,7 +98,7 @@ function renderEntityBox(entity: ERDLayoutEntity, theme: FloraTheme): SVGGElemen
 
     // Name (center column)
     const nameEl = el("text", {
-      x: x + w * 0.44, y: midY,
+      x: x + NAME_COL_X, y: midY,
       "text-anchor": "start", "dominant-baseline": "central",
       fill: theme.nodeColors.text,
       "font-family": theme.fontFamily, "font-size": theme.fontSize - 1,
@@ -155,6 +157,8 @@ function drawCardinalityMarks(
   // Positions along the line from the entity boundary outward
   const inner = { x: endpoint.x + dir.x * MARK_DIST1, y: endpoint.y + dir.y * MARK_DIST1 };
   const outer = { x: endpoint.x + dir.x * MARK_DIST2, y: endpoint.y + dir.y * MARK_DIST2 };
+  // beyond: where the "zero" circle sits for zero-or-many — past the crow-foot base
+  const beyond = { x: endpoint.x + dir.x * MARK_DIST3, y: endpoint.y + dir.y * MARK_DIST3 };
 
   const lineProps = { stroke, "stroke-width": "1.5", "stroke-linecap": "round" };
 
@@ -168,7 +172,7 @@ function drawCardinalityMarks(
     cx, cy, r: 5, fill: "none", ...lineProps,
   });
 
-  // Three prongs from "outer" toward entity boundary:
+  // Three prongs from "outer" (crow-foot base) toward entity:
   //   center: outer → endpoint (straight along line)
   //   sides:  outer → (inner ± perp*CROW_SPREAD)
   const crowFoot = () => [
@@ -199,7 +203,8 @@ function drawCardinalityMarks(
       for (const f of crowFoot()) group.appendChild(f);
       break;
     case "zero-or-many":
-      group.appendChild(circle(inner.x, inner.y));
+      // Circle sits beyond the crow-foot base so it doesn't thread through the prongs
+      group.appendChild(circle(beyond.x, beyond.y));
       for (const f of crowFoot()) group.appendChild(f);
       break;
   }

@@ -6,8 +6,10 @@ const HEADER_HEIGHT = 36;
 const ATTR_ROW_HEIGHT = 28;
 const MARK_DIST1 = 12;
 const MARK_DIST2 = 24;
+const MARK_DIST3 = 36;
 const MARK_HALF = 10;
 const CROW_SPREAD = 10;
+const NAME_COL_X = 56;
 
 export interface RenderERDStringOptions {
   theme?: ThemePreset | Partial<FloraTheme>;
@@ -63,7 +65,7 @@ function entityBoxSVG(entity: ERDLayoutEntity, theme: FloraTheme): string {
     }
 
     out += `<text ${a({ x: x + 10, y: midY, "text-anchor": "start", "dominant-baseline": "central", fill: theme.edgeColors.label, "font-family": theme.fontFamily, "font-size": theme.fontSize - 2, "font-style": "italic" })}>${esc(attr.type)}</text>`;
-    out += `<text ${a({ x: x + w * 0.44, y: midY, "text-anchor": "start", "dominant-baseline": "central", fill: theme.nodeColors.text, "font-family": theme.fontFamily, "font-size": theme.fontSize - 1, "font-weight": attr.key ? "600" : "400" })}>${esc(attr.name)}</text>`;
+    out += `<text ${a({ x: x + NAME_COL_X, y: midY, "text-anchor": "start", "dominant-baseline": "central", fill: theme.nodeColors.text, "font-family": theme.fontFamily, "font-size": theme.fontSize - 1, "font-weight": attr.key ? "600" : "400" })}>${esc(attr.name)}</text>`;
     if (attr.key) {
       out += `<text ${a({ x: x + w - 10, y: midY, "text-anchor": "end", "dominant-baseline": "central", fill: theme.shapeColors.stadium.stroke, "font-family": theme.fontFamily, "font-size": theme.fontSize - 3, "font-weight": "700" })}>${esc(attr.key)}</text>`;
     }
@@ -100,6 +102,8 @@ function cardinalityMarksSVG(
   const circ = (cx: number, cy: number) =>
     `<circle ${a({ cx, cy, r: 5, fill: "none", ...lp })}/>`;
 
+  const beyond = { x: endpoint.x + dir.x * MARK_DIST3, y: endpoint.y + dir.y * MARK_DIST3 };
+
   const crowFoot = () =>
     `<line ${a({ x1: outer.x, y1: outer.y, x2: endpoint.x, y2: endpoint.y, ...lp })}/>`
     + `<line ${a({ x1: outer.x, y1: outer.y, x2: inner.x + px * CROW_SPREAD, y2: inner.y + py * CROW_SPREAD, ...lp })}/>`
@@ -109,7 +113,7 @@ function cardinalityMarksSVG(
     case "exactly-one": return tick(inner.x, inner.y) + tick(outer.x, outer.y);
     case "zero-or-one": return tick(inner.x, inner.y) + circ(outer.x, outer.y);
     case "one-or-many": return tick(inner.x, inner.y) + crowFoot();
-    case "zero-or-many": return circ(inner.x, inner.y) + crowFoot();
+    case "zero-or-many": return circ(beyond.x, beyond.y) + crowFoot();
   }
 }
 

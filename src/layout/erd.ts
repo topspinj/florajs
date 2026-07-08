@@ -36,11 +36,16 @@ export function computeERDLayout(ast: ERDAST, theme: FloraTheme = defaultTheme):
 
   const dims = new Map<string, { width: number; height: number }>();
 
+  // Keep in sync with NAME_COL_X constant in renderer/erd.ts and renderer/erd-string.ts
+  const NAME_COL_X = 56;
+  const BADGE_PAD = 10; // right-edge padding matching the renderer
+
   for (const entity of ast.entities) {
     let maxWidth = estimateTextWidth(entity.id, theme.fontSize + 2) + 48;
     for (const attr of entity.attributes) {
-      const attrText = `${attr.type}  ${attr.name}${attr.key ? `  ${attr.key}` : ""}`;
-      maxWidth = Math.max(maxWidth, estimateTextWidth(attrText, theme.fontSize - 1) + 48);
+      const nameW = estimateTextWidth(attr.name, theme.fontSize - 1);
+      const badgeW = attr.key ? estimateTextWidth(attr.key, theme.fontSize - 3) + 14 : 0;
+      maxWidth = Math.max(maxWidth, NAME_COL_X + nameW + badgeW + BADGE_PAD + 8);
     }
     const width = Math.max(ENTITY_MIN_WIDTH, maxWidth);
     const height = HEADER_HEIGHT + entity.attributes.length * ATTR_ROW_HEIGHT + (entity.attributes.length > 0 ? 2 : 0);
