@@ -30,7 +30,7 @@ function intersectEntityRect(entity: ERDLayoutEntity, toward: Point): Point {
 }
 
 export function computeERDLayout(ast: ERDAST, theme: FloraTheme = defaultTheme): ERDLayoutResult {
-  const g = new dagre.graphlib.Graph();
+  const g = new dagre.graphlib.Graph({ multigraph: true });
   g.setGraph({ rankdir: "LR", nodesep: 80, ranksep: 140, marginx: 40, marginy: 40 });
   g.setDefaultEdgeLabel(() => ({}));
 
@@ -58,9 +58,9 @@ export function computeERDLayout(ast: ERDAST, theme: FloraTheme = defaultTheme):
     g.setNode(entity.id, { width, height });
   }
 
-  for (const rel of ast.relationships) {
+  for (const [idx, rel] of ast.relationships.entries()) {
     if (g.hasNode(rel.from) && g.hasNode(rel.to)) {
-      g.setEdge(rel.from, rel.to, {});
+      g.setEdge(rel.from, rel.to, {}, String(idx));
     }
   }
 
@@ -73,32 +73,32 @@ export function computeERDLayout(ast: ERDAST, theme: FloraTheme = defaultTheme):
 
   const entityMap = new Map(layoutEntities.map((e) => [e.id, e]));
 
-  const layoutRelationships: ERDLayoutRelationship[] = ast.relationships
-    .filter((rel) => g.hasNode(rel.from) && g.hasNode(rel.to))
-    .map((rel) => {
-      const edge = g.edge(rel.from, rel.to);
-      const points: Point[] = edge?.points ? [...edge.points] : [];
+  const layoutRelationships: ERDLayoutRelationship[] = [];
+  for (const [idx, rel] of ast.relationships.entries()) {
+    if (!g.hasNode(rel.from) || !g.hasNode(rel.to)) continue;
+    const edge = g.edge(rel.from, rel.to, String(idx));
+    const points: Point[] = edge?.points ? [...edge.points] : [];
 
-      const fromEntity = entityMap.get(rel.from);
-      const toEntity = entityMap.get(rel.to);
+    const fromEntity = entityMap.get(rel.from);
+    const toEntity = entityMap.get(rel.to);
 
-      if (fromEntity && points.length >= 2) {
-        points[0] = intersectEntityRect(fromEntity, points[1]!);
-      }
-      if (toEntity && points.length >= 2) {
-        points[points.length - 1] = intersectEntityRect(toEntity, points[points.length - 2]!);
-      }
+    if (fromEntity && points.length >= 2) {
+      points[0] = intersectEntityRect(fromEntity, points[1]!);
+    }
+    if (toEntity && points.length >= 2) {
+      points[points.length - 1] = intersectEntityRect(toEntity, points[points.length - 2]!);
+    }
 
-      return {
-        from: rel.from,
-        to: rel.to,
-        label: rel.label,
-        fromCardinality: rel.fromCardinality,
-        toCardinality: rel.toCardinality,
-        identifying: rel.identifying,
-        points,
-      };
+    layoutRelationships.push({
+      from: rel.from,
+      to: rel.to,
+      label: rel.label,
+      fromCardinality: rel.fromCardinality,
+      toCardinality: rel.toCardinality,
+      identifying: rel.identifying,
+      points,
     });
+  }
 
   const graphInfo = g.graph();
   return {
