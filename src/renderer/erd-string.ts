@@ -1,15 +1,7 @@
 import type { ERDLayoutResult, ERDLayoutEntity, ERDLayoutRelationship, ERDCardinality, FloraTheme, FloraOptions } from "../types.js";
 import { resolveTheme } from "../themes/index.js";
 import type { ThemePreset } from "../types.js";
-
-const HEADER_HEIGHT = 36;
-const ATTR_ROW_HEIGHT = 28;
-const MARK_DIST1 = 12;
-const MARK_DIST2 = 24;
-const MARK_DIST3 = 36;
-const MARK_HALF = 10;
-const CROW_SPREAD = 10;
-const NAME_COL_X = 56;
+import { HEADER_HEIGHT, ATTR_ROW_HEIGHT, MARK_DIST1, MARK_DIST2, MARK_DIST3, MARK_HALF, CROW_SPREAD, NAME_COL_X, normalize } from "./erd-shared.js";
 
 export interface RenderERDStringOptions {
   theme?: ThemePreset | Partial<FloraTheme>;
@@ -23,11 +15,6 @@ function a(attrs: Record<string, string | number>): string {
   return Object.entries(attrs).map(([k, v]) => `${k}="${esc(String(v))}"`).join(" ");
 }
 
-function normalize(dx: number, dy: number): { x: number; y: number } {
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len < 0.001) return { x: 1, y: 0 };
-  return { x: dx / len, y: dy / len };
-}
 
 // ---------------------------------------------------------------------------
 // Entity box

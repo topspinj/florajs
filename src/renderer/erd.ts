@@ -1,17 +1,6 @@
 import type { ERDLayoutResult, ERDLayoutEntity, ERDLayoutRelationship, ERDCardinality, FloraTheme, FloraOptions } from "../types.js";
 import { resolveTheme } from "../themes/index.js";
-
-const HEADER_HEIGHT = 36;
-const ATTR_ROW_HEIGHT = 28;
-const MARK_DIST1 = 12; // inner mark distance from entity boundary
-const MARK_DIST2 = 24; // crow-foot base / outer tick distance
-const MARK_DIST3 = 36; // zero-circle distance (beyond crow-foot base)
-const MARK_HALF = 10;  // half-width of perpendicular tick lines
-const CROW_SPREAD = 10; // perpendicular spread of crow's-foot side prongs
-const NAME_COL_X = 56; // fixed name-column start (leaves room for type column)
-
-let _nextId = 0;
-function uid(): string { return String(_nextId++); }
+import { HEADER_HEIGHT, ATTR_ROW_HEIGHT, MARK_DIST1, MARK_DIST2, MARK_DIST3, MARK_HALF, CROW_SPREAD, NAME_COL_X, normalize } from "./erd-shared.js";
 
 function el(tag: string, attrs: Record<string, string | number>): SVGElement {
   const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -19,11 +8,6 @@ function el(tag: string, attrs: Record<string, string | number>): SVGElement {
   return node;
 }
 
-function normalize(dx: number, dy: number): { x: number; y: number } {
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len < 0.001) return { x: 1, y: 0 };
-  return { x: dx / len, y: dy / len };
-}
 
 // ---------------------------------------------------------------------------
 // Entity box
