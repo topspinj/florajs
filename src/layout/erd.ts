@@ -42,10 +42,15 @@ export function computeERDLayout(ast: ERDAST, theme: FloraTheme = defaultTheme):
 
   for (const entity of ast.entities) {
     let maxWidth = estimateTextWidth(entity.id, theme.fontSize + 2) + 48;
+    // Name-column start expands when a type string is wider than the default column
+    let nameColX = NAME_COL_X;
+    for (const attr of entity.attributes) {
+      nameColX = Math.max(nameColX, estimateTextWidth(attr.type, theme.fontSize - 2) + 14);
+    }
     for (const attr of entity.attributes) {
       const nameW = estimateTextWidth(attr.name, theme.fontSize - 1);
       const badgeW = attr.key ? estimateTextWidth(attr.key, theme.fontSize - 3) + 14 : 0;
-      maxWidth = Math.max(maxWidth, NAME_COL_X + nameW + badgeW + BADGE_PAD + 8);
+      maxWidth = Math.max(maxWidth, nameColX + nameW + badgeW + BADGE_PAD + 8);
     }
     const width = Math.max(ENTITY_MIN_WIDTH, maxWidth);
     const height = HEADER_HEIGHT + entity.attributes.length * ATTR_ROW_HEIGHT + (entity.attributes.length > 0 ? 2 : 0);

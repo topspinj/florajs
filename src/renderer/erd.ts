@@ -64,6 +64,10 @@ function renderEntityBox(entity: ERDLayoutEntity, theme: FloraTheme): SVGGElemen
   group.appendChild(headerText);
 
   // Attribute rows
+  const nameColX = entity.attributes.reduce(
+    (mx, a) => Math.max(mx, a.type.length * (theme.fontSize - 2) * 0.62 + 14),
+    NAME_COL_X,
+  );
   for (let i = 0; i < entity.attributes.length; i++) {
     const attr = entity.attributes[i]!;
     const rowY = y + hh + i * ATTR_ROW_HEIGHT;
@@ -98,7 +102,7 @@ function renderEntityBox(entity: ERDLayoutEntity, theme: FloraTheme): SVGGElemen
 
     // Name (center column)
     const nameEl = el("text", {
-      x: x + NAME_COL_X, y: midY,
+      x: x + nameColX, y: midY,
       "text-anchor": "start", "dominant-baseline": "central",
       fill: theme.nodeColors.text,
       "font-family": theme.fontFamily, "font-size": theme.fontSize - 1,

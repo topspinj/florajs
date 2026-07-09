@@ -52,6 +52,10 @@ function entityBoxSVG(entity: ERDLayoutEntity, theme: FloraTheme): string {
   out += `<text ${a({ x: entity.x, y: y + hh / 2 + 1, "text-anchor": "middle", "dominant-baseline": "central", fill: theme.background, "font-family": theme.fontFamily, "font-size": theme.fontSize + 1, "font-weight": "700" })}>${esc(entity.id)}</text>`;
 
   // Attribute rows
+  const nameColX = entity.attributes.reduce(
+    (mx, a) => Math.max(mx, a.type.length * (theme.fontSize - 2) * 0.62 + 14),
+    NAME_COL_X,
+  );
   for (let i = 0; i < entity.attributes.length; i++) {
     const attr = entity.attributes[i]!;
     const rowY = y + hh + i * ATTR_ROW_HEIGHT;
@@ -65,7 +69,7 @@ function entityBoxSVG(entity: ERDLayoutEntity, theme: FloraTheme): string {
     }
 
     out += `<text ${a({ x: x + 10, y: midY, "text-anchor": "start", "dominant-baseline": "central", fill: theme.edgeColors.label, "font-family": theme.fontFamily, "font-size": theme.fontSize - 2, "font-style": "italic" })}>${esc(attr.type)}</text>`;
-    out += `<text ${a({ x: x + NAME_COL_X, y: midY, "text-anchor": "start", "dominant-baseline": "central", fill: theme.nodeColors.text, "font-family": theme.fontFamily, "font-size": theme.fontSize - 1, "font-weight": attr.key ? "600" : "400" })}>${esc(attr.name)}</text>`;
+    out += `<text ${a({ x: x + nameColX, y: midY, "text-anchor": "start", "dominant-baseline": "central", fill: theme.nodeColors.text, "font-family": theme.fontFamily, "font-size": theme.fontSize - 1, "font-weight": attr.key ? "600" : "400" })}>${esc(attr.name)}</text>`;
     if (attr.key) {
       out += `<text ${a({ x: x + w - 10, y: midY, "text-anchor": "end", "dominant-baseline": "central", fill: theme.shapeColors.stadium.stroke, "font-family": theme.fontFamily, "font-size": theme.fontSize - 3, "font-weight": "700" })}>${esc(attr.key)}</text>`;
     }
