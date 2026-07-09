@@ -30,7 +30,7 @@ function parseRightCardinality(s: string): ERDCardinality {
 
 const ENTITY_ID = "[A-Za-z][A-Za-z0-9_-]*";
 const CARD_CHARS = "[|o}{]{2}";
-const REL_TYPE = "(?:--|\\.\\.)+";
+const REL_TYPE = "(?:--|\\.\\.)";
 
 const REL_RE = new RegExp(
   `^(${ENTITY_ID})\\s+(${CARD_CHARS})(${REL_TYPE})(${CARD_CHARS})\\s+(${ENTITY_ID})\\s*:\\s*"?([^"]*?)"?\\s*$`,
@@ -82,8 +82,8 @@ export function parseERD(input: string, warnings: ParseWarning[] = []): ERDAST {
           const attr: ERDAttribute = { type: m[1]!, name: m[2]! };
           const k1 = m[3] as "PK" | "FK" | "UK" | undefined;
           const k2 = m[4] as "PK" | "FK" | "UK" | undefined;
-          // Prefer PK > FK > UK when multiple keys are specified
-          attr.key = k1 ?? k2;
+          const keys = [k1, k2].filter(Boolean) as Array<"PK" | "FK" | "UK">;
+          attr.key = keys.find((k) => k === "PK") ?? keys.find((k) => k === "FK") ?? keys[0];
           if (m[5]) attr.comment = m[5];
           entity.attributes.push(attr);
         } else {
