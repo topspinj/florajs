@@ -186,6 +186,12 @@
     <div class="editor-pane">
       <div class="editor-controls">
         <button id="render-btn">Render</button>
+        <label for="example-select">Examples</label>
+        <select id="example-select">
+          <option value="">— pick one —</option>
+          <option value="flowchart">Flowchart</option>
+          <option value="erd">ERD (Beta)</option>
+        </select>
       </div>
       <textarea id="input" spellcheck="false">flowchart TD
   src[Data Source] --> raw[(Raw Table)]
@@ -226,11 +232,55 @@
   <script type="module">
     import { render, toPNG, toSVGString } from "./dist/index.js";
 
+    const EXAMPLES = {
+      flowchart: `flowchart TD
+  src[Data Source] --> raw[(Raw Table)]
+  raw --> stg_orders[Staging Orders]
+  raw --> stg_customers[Staging Customers]
+  raw --> stg_payments[Staging Payments]
+  stg_orders --> fct_orders[Fact Orders]
+  stg_customers --> dim_customers[Dim Customers]
+  stg_payments --> fct_orders
+  fct_orders --> mart_revenue[Revenue Mart]
+  dim_customers --> mart_revenue
+  fct_orders --> mart_ops[Ops Mart]
+  mart_revenue --> dashboard[Dashboard]
+  mart_ops --> alerts{Alerts}
+  dim_customers --> report([Customer Report])`,
+      erd: `erDiagram
+  CUSTOMER ||--o{ ORDER : places
+  ORDER ||--|{ LINE-ITEM : contains
+  ORDER }o--|| DELIVERY-ADDRESS : "delivered to"
+
+  CUSTOMER {
+    int id PK
+    string name
+    string email FK
+  }
+  ORDER {
+    int orderNumber PK
+    date placedAt
+    string status
+  }
+  LINE-ITEM {
+    int quantity
+    float unitPrice
+    string productId FK
+  }`,
+    };
+
     const input = document.getElementById("input");
     const themeSelect = document.getElementById("theme");
     const renderBtn = document.getElementById("render-btn");
+    const exampleSelect = document.getElementById("example-select");
     const diagram = document.getElementById("diagram");
     const diagnostics = document.getElementById("diagnostics");
+
+    exampleSelect.addEventListener("change", () => {
+      const ex = EXAMPLES[exampleSelect.value];
+      if (ex) { input.value = ex; doRender(); }
+      exampleSelect.value = "";
+    });
 
     function showDiagnostics(warnings, unsupportedType) {
       diagnostics.innerHTML = "";
