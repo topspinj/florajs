@@ -188,7 +188,6 @@
         <button id="render-btn">Render</button>
         <label for="example-select">Examples</label>
         <select id="example-select">
-          <option value="">— pick one —</option>
           <option value="flowchart">Flowchart</option>
           <option value="erd">ERD (Beta)</option>
         </select>
@@ -279,7 +278,6 @@
     exampleSelect.addEventListener("change", () => {
       const ex = EXAMPLES[exampleSelect.value];
       if (ex) { input.value = ex; doRender(); }
-      exampleSelect.value = "";
     });
 
     function showDiagnostics(warnings, unsupportedType) {
