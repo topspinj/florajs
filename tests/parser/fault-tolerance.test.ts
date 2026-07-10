@@ -84,7 +84,6 @@ describe("fault-tolerant parser", () => {
     const unsupportedTypes = [
       "classDiagram",
       "stateDiagram",
-      "erDiagram",
       "gantt",
       "journey",
       "pie",

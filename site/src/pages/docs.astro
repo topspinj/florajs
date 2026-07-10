@@ -23,6 +23,7 @@ const base = import.meta.env.BASE_URL;
           <a href="#node-links">Node Links</a>
           <a href="#directions">Directions</a>
           <a href="#subgraphs">Subgraphs</a>
+          <a href="#erd">ERD Diagrams <span style="font-size:0.7em;font-weight:600;background:#fef9c3;color:#854d0e;border-radius:3px;padding:1px 5px;vertical-align:middle">Beta</span></a>
         </div>
         <div class="sidebar-section">
           <h3>Integrations</h3>
@@ -817,6 +818,50 @@ flowchart TD
         </p>
       </section>
 
+      <!-- ERD Diagrams -->
+      <section id="erd">
+        <h2>ERD Diagrams <span style="display:inline-block;font-size:0.5em;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;background:#fef9c3;color:#854d0e;border:1px solid #fde68a;border-radius:4px;padding:2px 8px;vertical-align:middle;position:relative;top:-2px">Beta</span></h2>
+        <p>Flora supports entity-relationship diagrams using Mermaid-compatible <code>erDiagram</code> syntax. Entities render as table boxes with attribute rows; relationships use crow's foot notation for cardinality.</p>
+        <p style="background:#fefce8;border:1px solid #fde68a;border-radius:6px;padding:10px 14px;font-size:0.9em;color:#713f12;margin-bottom:1.2em">ERD support is in beta. The syntax and layout are stable, but the API may see minor changes before 1.0.</p>
+
+        <h3>Basic syntax</h3>
+        <pre><code><span class="t-kw">erDiagram</span>
+  CUSTOMER <span class="t-op">||--o{</span> ORDER : <span class="t-str">places</span>
+  ORDER <span class="t-op">||--|{</span> LINE-ITEM : <span class="t-str">contains</span>
+
+  CUSTOMER &#123;
+    int id <span class="t-str">PK</span>
+    string name
+    string email <span class="t-str">FK</span>
+  &#125;
+  ORDER &#123;
+    int orderNumber <span class="t-str">PK</span>
+    date placedAt
+  &#125;</code></pre>
+
+        <h3>Cardinality notation</h3>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>||</code></td><td>Exactly one</td></tr>
+              <tr><td><code>|o</code> / <code>o|</code></td><td>Zero or one</td></tr>
+              <tr><td><code>|&#123;</code> / <code>&#125;|</code></td><td>One or many</td></tr>
+              <tr><td><code>o&#123;</code> / <code>&#125;o</code></td><td>Zero or many</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Relationship types</h3>
+        <p><code>--</code> = identifying (solid line) &nbsp;|&nbsp; <code>..</code> = non-identifying (dashed line)</p>
+
+        <h3>Attribute syntax</h3>
+        <pre><code>ENTITY &#123;
+  type    name [PK|FK|UK] ["optional comment"]
+&#125;</code></pre>
+        <p>Entities referenced only in relationships are created implicitly with no attributes.</p>
+      </section>
+
       <!-- API Reference -->
       <section id="render">
         <h2>API Reference</h2>
@@ -889,8 +934,9 @@ console.<span class="t-fn">log</span>(ast.edges);
           <pre><code><span class="t-fn">toLayout</span>(
   input: <span class="t-kw">string</span>,
   options?: &#123; strict?: <span class="t-kw">boolean</span> &#125;
-): &#123; layout: <span class="t-kw">LayoutResult</span>; warnings: <span class="t-kw">ParseWarning</span>[] &#125;</code></pre>
+): &#123; layout: <span class="t-kw">LayoutResult</span>; erdLayout?: <span class="t-kw">ERDLayoutResult</span>; warnings: <span class="t-kw">ParseWarning</span>[] &#125;</code></pre>
         </div>
+        <p>For flowchart inputs, <code>layout</code> is populated. For ERD inputs, <code>erdLayout</code> is populated instead.</p>
         <pre><code><span class="t-kw">const</span> &#123; layout &#125; = <span class="t-fn">toLayout</span>(<span class="t-str">`flowchart LR
   A --&gt; B --&gt; C`</span>);
 
@@ -1108,7 +1154,61 @@ console.<span class="t-fn">log</span>(ast.edges);
         <p>These types represent the abstract syntax tree returned by <code>toAST()</code>.</p>
 
         <h4><code>DiagramAST</code></h4>
-        <p>A union type: <code>FlowchartAST | UnsupportedDiagramAST</code>. Check the <code>type</code> field to narrow.</p>
+        <p>A union type: <code>FlowchartAST | ERDAST | UnsupportedDiagramAST</code>. Narrow via the <code>type</code> discriminant field.</p>
+
+        <h4><code>ERDAST</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>type</code></td><td><code>"erd"</code></td><td>Discriminant</td></tr>
+              <tr><td><code>entities</code></td><td><code>ERDEntity[]</code></td><td>All entities, including implicit ones created from relationships</td></tr>
+              <tr><td><code>relationships</code></td><td><code>ERDRelationship[]</code></td><td>All relationships with cardinality and identifying flag</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>ERDEntity</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td><code>string</code></td><td>Entity name (e.g. <code>"CUSTOMER"</code>)</td></tr>
+              <tr><td><code>attributes</code></td><td><code>ERDAttribute[]</code></td><td>Ordered list of attributes</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>ERDAttribute</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>type</code></td><td><code>string</code></td><td>Data type (e.g. <code>"int"</code>, <code>"varchar(255)"</code>)</td></tr>
+              <tr><td><code>name</code></td><td><code>string</code></td><td>Attribute name</td></tr>
+              <tr><td><code>key</code></td><td><code>"PK" | "FK" | "UK" | undefined</code></td><td>Key type annotation</td></tr>
+              <tr><td><code>comment</code></td><td><code>string?</code></td><td>Optional inline comment</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>ERDRelationship</code></h4>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>from</code></td><td><code>string</code></td><td>Source entity ID</td></tr>
+              <tr><td><code>to</code></td><td><code>string</code></td><td>Target entity ID</td></tr>
+              <tr><td><code>label</code></td><td><code>string</code></td><td>Relationship label (e.g. <code>"places"</code>)</td></tr>
+              <tr><td><code>fromCardinality</code></td><td><code>ERDCardinality</code></td><td>Cardinality at the source entity</td></tr>
+              <tr><td><code>toCardinality</code></td><td><code>ERDCardinality</code></td><td>Cardinality at the target entity</td></tr>
+              <tr><td><code>identifying</code></td><td><code>boolean</code></td><td><code>true</code> = solid line (<code>--</code>); <code>false</code> = dashed (<code>..</code>)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>ERDCardinality</code></h4>
+        <p><code>"zero-or-one" | "exactly-one" | "zero-or-many" | "one-or-many"</code> — maps to standard crow's foot notation symbols.</p>
 
         <h4><code>FlowchartAST</code></h4>
         <div class="shape-table">
@@ -1235,6 +1335,20 @@ console.<span class="t-fn">log</span>(ast.edges);
               <tr><td><code>width</code>, <code>height</code></td><td><code>number</code></td><td>Dimensions</td></tr>
               <tr><td><code>nodeCount</code></td><td><code>number</code></td><td>Number of contained nodes</td></tr>
               <tr><td><code>parentId</code></td><td><code>string?</code></td><td>Parent subgraph ID</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4><code>ERDLayoutResult</code></h4>
+        <p>ERD-specific layout returned in <code>toLayout().erdLayout</code>.</p>
+        <div class="shape-table">
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>entities</code></td><td><code>ERDLayoutEntity[]</code></td><td>Positioned entity boxes</td></tr>
+              <tr><td><code>relationships</code></td><td><code>ERDLayoutRelationship[]</code></td><td>Routed relationship lines with cardinality</td></tr>
+              <tr><td><code>width</code></td><td><code>number</code></td><td>Bounding box width</td></tr>
+              <tr><td><code>height</code></td><td><code>number</code></td><td>Bounding box height</td></tr>
             </tbody>
           </table>
         </div>
